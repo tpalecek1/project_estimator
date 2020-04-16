@@ -8,16 +8,34 @@ class ProjectDetail extends StatelessWidget {
 
   static const routeName = 'project_detail';
 
+  //fake room data
+  final rooms = [{'name': 'Living Room'},
+                 {'name': 'BedRoom'},
+                 {'name': 'Kitchen'},
+                 {'name': 'Master Bathroom'}];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Project Name'),
+        actions: [
+          Center(child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: SizedBox(child: Placeholder(), width: 100),
+          ))
+        ],
       ),
-      body: Center(
-        child: Column(
-          children: [
-            Row(
+      body: Column(
+        children: [
+          Flexible(
+            flex: 2,
+            child: Placeholder()
+          ),
+          Flexible(
+            flex: 2,
+            fit: FlexFit.tight,
+            child: Row(
               children: [
                 Expanded(
                   child: RaisedButton(
@@ -45,16 +63,35 @@ class ProjectDetail extends StatelessWidget {
                 ),
               ],
             ),
-            //todo: should be in the list, make fake listview data
-            RaisedButton(
-              onPressed: () {
-                Navigator.of(context).pushNamed(RoomDetail.routeName);
-              },
-              child: Text('xxx Room'),
+          ),
+          Flexible(
+            flex: 3,
+            child: Placeholder()
+          ),
+          Flexible(
+            flex: 1,
+            fit: FlexFit.tight,
+            child: Container(child: Align(child: Text('Rooms'), alignment: Alignment.centerLeft,))
+          ),
+          //todo: should be in the list, make fake listview data
+          Flexible(
+            flex: 3,
+            child: ListView.builder(
+              itemCount: rooms.length,
+              itemBuilder: (context, index) {
+                return Card(
+                  child: ListTile(
+                    title: Text('${rooms[index]['name']}'),
+                    onTap: () {
+                      Navigator.of(context).pushNamed(RoomDetail.routeName);
+                    },
+                  ),
+                );
+              }
             ),
-          ]
-        ),
-      )
+          ),
+        ]
+      ),
     );
   }
 }
