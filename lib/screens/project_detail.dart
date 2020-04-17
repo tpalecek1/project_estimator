@@ -3,6 +3,7 @@ import 'package:project_estimator/screens/edit_project.dart';
 import 'package:project_estimator/screens/project_estimate.dart';
 import 'package:project_estimator/screens/project_notes.dart';
 import 'package:project_estimator/screens/room_detail.dart';
+import 'package:project_estimator/widgets/custom_button_1.dart';
 
 class ProjectDetail extends StatelessWidget {
 
@@ -38,28 +39,28 @@ class ProjectDetail extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: RaisedButton(
+                  child: CustomButton1(
                     onPressed: () {
                       Navigator.of(context).pushNamed(EditProject.routeName);
                     },
-                    child: Text('Edit Project Button'),
-                  ),
+                    child: Text('Edit Project Button')
+                  )
                 ),
                 Expanded(
-                  child: RaisedButton(
+                  child: CustomButton1(
                     onPressed: () {
                       Navigator.of(context).pushNamed(ProjectNotes.routeName);
                     },
-                    child: Text('Show Project Notes Button'),
-                  ),
+                    child: Text('Show Project Notes Button')
+                  )
                 ),
                 Expanded(
-                  child: RaisedButton(
+                  child: CustomButton1(
                     onPressed: () {
                       Navigator.of(context).pushNamed(ProjectEstimate.routeName);
                     },
-                    child: Text('Show Project Estimate Button'),
-                  ),
+                    child: Text('Show Project Estimate Button')
+                  )
                 ),
               ],
             ),
@@ -71,7 +72,7 @@ class ProjectDetail extends StatelessWidget {
           Flexible(
             flex: 1,
             fit: FlexFit.tight,
-            child: Container(child: Align(child: Text('Rooms'), alignment: Alignment.centerLeft,))
+            child: Container(child: Align(child: Text('Rooms'), alignment: Alignment.centerLeft))
           ),
           //todo: should be in the list, make fake listview data
           Flexible(

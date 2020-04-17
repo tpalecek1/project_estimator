@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:project_estimator/screens/room_photo_gallery.dart';
+import 'package:project_estimator/widgets/custom_button_1.dart';
 
 class EditRoom extends StatelessWidget {
 
@@ -11,29 +12,68 @@ class EditRoom extends StatelessWidget {
       appBar: AppBar(
         title: Text('Room Name'),
       ),
-      body: Center(
-        child: Row(
-          children: [
-            RaisedButton(
-              onPressed: () {
-                //todo: Add Photo
-              },
-              child: Text('Add Photo'),
+      body: Column(
+        children: [
+          Flexible(
+            flex: 6,
+            child: Placeholder()
+          ),
+          Flexible(
+            flex: 2,
+            fit: FlexFit.tight,
+            child: Row(
+              children: [
+                Expanded(
+                  child: CustomButton1(
+                    onPressed: () {
+                      //todo: Add Photo
+                    },
+                    child: Text('Add Photo')
+                  ),
+                ),
+                Expanded(
+                  child: CustomButton1(
+                    onPressed: () {
+                      Navigator.of(context).pushNamed(RoomPhotoGallery.routeName);
+                    },
+                    child: Text('View Photos')
+                  ),
+                )
+              ],
             ),
-            RaisedButton(
-              onPressed: () {
-                Navigator.of(context).pushNamed(RoomPhotoGallery.routeName);
-              },
-              child: Text('View Photos'),
-            ),
-            RaisedButton(
-              onPressed: () {
-                //todo: Add Note
-              },
-              child: Text('Add Note'),
-            ),
-          ],
-        ),
+          ),
+          Flexible(
+            flex: 2,
+            fit: FlexFit.tight,
+            child: Row(
+              children: [
+                Expanded(child: Container(child: Align(child: Text('Rooms Notes'), alignment: Alignment.centerLeft))),
+                CustomButton1(
+                  onPressed: () {
+                    //todo: Add Note
+                  },
+                  child: Text('Add Note'),
+                )
+              ]
+            )
+          ),
+          Flexible(
+            flex: 4,
+            fit: FlexFit.tight,
+            child: Placeholder()
+          ),
+          Flexible(
+            flex: 3,
+            child: Placeholder()
+          ),
+        ]
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          //todo
+          Navigator.of(context).pop();
+        },
+        child: Icon(Icons.check),
       )
     );
   }
