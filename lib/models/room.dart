@@ -10,7 +10,7 @@ class Room {
 
   Room({
     this.name = 'Room',
-    this.ceilingHeight,
+    this.ceilingHeight = 0,
     this.length = 0,
     this.width = 0,
     this.doorCount = 0,
@@ -24,7 +24,7 @@ class Room {
   });
 
   Room.fromMap(dynamic map){
-    name = map['Room'];
+    name = map['name'];
     ceilingHeight = map['ceilingHeight'];
     length = map['length'];
     width = map['width'];
@@ -36,5 +36,23 @@ class Room {
     hasBaseboard = map['hasBaseboard'];
     photos = map['photos'];
     roomNotes = map['roomNotes'];
+  }
+
+  void addNote(RoomNote note){
+    //todo - Add note to database
+    roomNotes.add(note);
+  }
+
+  void addPhoto(String url){
+    photos.add(url);
+  }
+
+  void removeNote(RoomNote note){
+    //todo - Remove note from database
+    roomNotes.remove(note);
+  }
+
+  void removePhoto(String url){
+    photos.remove(url);
   }
 }
