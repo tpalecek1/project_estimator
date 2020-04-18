@@ -1,12 +1,9 @@
-import 'room_note.dart';
-
 class Room {
   String name;
   double ceilingHeight, length, width;
   int doorCount, windowCount, accentWallCount;
   bool hasCrown, hasChairRail, hasBaseboard;
   List<String> photos;
-  List<RoomNote> roomNotes;
 
   Room({
     this.name = 'Room',
@@ -20,7 +17,6 @@ class Room {
     this.hasChairRail = false,
     this.hasBaseboard = false,
     this.photos,
-    this.roomNotes
   });
 
   Room.fromMap(dynamic map){
@@ -35,24 +31,29 @@ class Room {
     hasChairRail = map['hasChairRail'];
     hasBaseboard = map['hasBaseboard'];
     photos = map['photos'];
-    roomNotes = map['roomNotes'];
-  }
-
-  void addNote(RoomNote note){
-    //todo - Add note to database
-    roomNotes.add(note);
   }
 
   void addPhoto(String url){
     photos.add(url);
   }
 
-  void removeNote(RoomNote note){
-    //todo - Remove note from database
-    roomNotes.remove(note);
-  }
-
   void removePhoto(String url){
     photos.remove(url);
+  }
+
+  double ceilingArea(){
+    return length * width;
+  }
+
+  double wallArea(){
+    return (length * 2) + (width * 2) * ceilingHeight;
+  }
+
+  double trimLength(){
+    double base, chair, crown = 0;
+    if(hasBaseboard) base = (length * 2) + (width * 2);
+    if(hasChairRail) chair = (length * 2) + (width * 2);
+    if(hasCrown) crown = (length * 2) + (width * 2);
+    return base + chair + crown;
   }
 }
