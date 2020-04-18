@@ -98,8 +98,6 @@ class _SplashScreenState extends State<SplashScreen> {
                         SizedBox(height: 20),
                         Text(
                           'initializing...',
-                          softWrap: true,
-                          textAlign: TextAlign.center,
                           style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 18.0,
