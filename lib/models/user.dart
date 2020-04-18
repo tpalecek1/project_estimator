@@ -1,10 +1,5 @@
-import 'paint_settings.dart';
-import 'project.dart';
-
 class User {
   String name, company, address, phoneNumber, licenseNumber;
-  PaintSettings paintSettings;
-  List<Project> projects;
 
   User({
     this.name = "",
@@ -12,8 +7,6 @@ class User {
     this.address = "",
     this.phoneNumber = "",
     this.licenseNumber = "",
-    this.paintSettings,
-    this.projects
   });
 
   User.fromMap(dynamic map){
@@ -22,17 +15,5 @@ class User {
     address = map['address'];
     phoneNumber = map['phoneNumber'];
     licenseNumber = map['licenseNumber'];
-    paintSettings = map['paintSettings'];
-    projects = map['projects'];
-  }
-
-  void addProject(Project project){
-    //todo - add project to database
-    projects.add(project);
-  }
-
-  void removeProject(Project project){
-    //todo - remove project from database
-    projects.remove(project);
   }
 }

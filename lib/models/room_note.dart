@@ -11,6 +11,4 @@ class RoomNote{
     hasCost = map['hasCost'];
     description = map['description'];
   }
-
-
 }
