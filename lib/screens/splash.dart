@@ -77,9 +77,9 @@ class _SplashScreenState extends State<SplashScreen> {
                         Text(
                           'Construction Estimator',
                           style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 24.0),
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 24.0),
                         )
                       ],
                     ),
@@ -99,9 +99,9 @@ class _SplashScreenState extends State<SplashScreen> {
                         Text(
                           'initializing...',
                           style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18.0,
-                              color: Colors.white),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18.0,
+                            color: Colors.white),
                         )
                       ],
                     ),
