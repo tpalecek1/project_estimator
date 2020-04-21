@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:project_estimator/screens/project_detail.dart';
 import 'package:project_estimator/screens/user_setting.dart';
+import 'package:project_estimator/widgets/my_popup_menu.dart' as mypopup;
 
 import 'edit_project.dart';
 
@@ -12,14 +13,32 @@ class ProjectList extends StatefulWidget {
 class _ProjectListState extends State<ProjectList> {
   TextEditingController controller = TextEditingController();
   bool showCancel = false;
+  String _selectedCategory;
   //fake list data
   final items = List<Map>.generate(100, (i) {
     return {
-      'date':'Date $i',
+      'date':'2020-04-21 08:00',
       'projectName':'Project $i',
-      'category':'category $i'
+      'category': category(i)
     };
   });
+  static String category(int i) {
+    i = i%6;
+    switch(i) {
+      case 0:
+        return "bid";
+      case 1:
+        return "not bid";
+      case 2:
+        return "awarded";
+      case 3:
+        return "not awarded";
+      case 4:
+        return "started";
+      case 5:
+        return "complete";
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,8 +103,10 @@ class _ProjectListState extends State<ProjectList> {
                       shape: BoxShape.rectangle,
                     ),
                     child: InkWell(
-                      //splashColor: Colors.lightBlueAccent,
-                      onTap: (){},
+                      onTap: (){
+                        //todo
+                        FocusScope.of(context).requestFocus(FocusNode());
+                      },
                       child: SizedBox(
                         width: 50,
                         child: Icon(
@@ -107,18 +128,32 @@ class _ProjectListState extends State<ProjectList> {
                       color: Colors.white,
                       shape: BoxShape.rectangle,
                     ),
-                    child: InkWell(
-                      //splashColor: Colors.lightBlueAccent,
-                      onTap: (){},
-                      child: SizedBox(
-                        width: 50,
-                        child: Icon(
-                            Icons.filter_list,
-                            size: 30.0,
-                            color: Colors.black,
-                        ),
-                      ),                    
-                    ),
+                    child: mypopup.PopupMenuButton<String>(
+                      elevation: 20,
+                      tooltip: 'Select a category',
+                      padding: EdgeInsets.all(0),
+                      icon: Icon(Icons.filter_list),
+                      onSelected: (newValue) {
+                        FocusScope.of(context).requestFocus(FocusNode()); //to unfocus serach textField, weird way, check alternative way later
+                        //widget.filter(newValue);
+                        setState(() {
+                          _selectedCategory = newValue;
+                        });
+                      },
+                      itemBuilder: (BuildContext context) {
+                        return <String>['all', 'bid', 'not bid', 'awarded', 'not awarded', 'started', 'complete'].map((String choice) {
+                          return mypopup.PopupMenuItem<String>(
+                            value: choice,
+                            child: Container(
+                              width: double.infinity,
+                              height: double.infinity,
+                              color: choice == _selectedCategory ? Colors.blue[100] : null,
+                              child: Center(child: Text(choice)) //must use Center for this custom popup widget, otherwise strange layout appear
+                            ),
+                          );
+                        }).toList();
+                      },
+                    )
                   )
                 )
               ),
@@ -129,13 +164,21 @@ class _ProjectListState extends State<ProjectList> {
             child: ListView.builder(
               itemCount: items.length,
               itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text('${items[index]['projectName']}'),
-                  subtitle: Text('${items[index]['date']}'),
-                  trailing: Text('${items[index]['category']}'),
-                  onTap: () {
-                    Navigator.of(context).pushNamed(ProjectDetail.routeName);
-                  },
+                return Column(
+                  children: [
+                    ListTile(
+                      title: Text('${items[index]['date']}', style: TextStyle(color: Colors.blue, fontSize: 12)),
+                      subtitle: Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text('${items[index]['projectName']}', style: TextStyle(fontSize: 18)),
+                      ),
+                      trailing: Text('${items[index]['category']}', style: TextStyle(fontSize: 16)),
+                      onTap: () {
+                        Navigator.of(context).pushNamed(ProjectDetail.routeName);
+                      },
+                    ),
+                    Divider(height: 1)
+                  ]
                 );
               }
             ),
@@ -152,6 +195,7 @@ class _ProjectListState extends State<ProjectList> {
     );
   }
   void onSearchTextChanged(String text) {
+    //todo: search functionality
     if(text.isEmpty) {
       showCancel = false;
       setState(() {});
