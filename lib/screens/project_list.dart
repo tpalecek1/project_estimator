@@ -18,7 +18,8 @@ class _ProjectListState extends State<ProjectList> {
   final items = List<Map>.generate(100, (i) {
     return {
       'date':'2020-04-21 08:00',
-      'projectName':'Project $i',
+      'projectName':'Project ${i+1}',
+      'projectDescription':'project ${i+1} description', 
       'category': category(i)
     };
   });
@@ -168,11 +169,25 @@ class _ProjectListState extends State<ProjectList> {
                   children: [
                     ListTile(
                       title: Text('${items[index]['date']}', style: TextStyle(color: Colors.blue, fontSize: 12)),
+                      // subtitle: Padding(
+                      //   padding: const EdgeInsets.only(top: 8.0),
+                      //   child: Text('${items[index]['projectName']}', style: TextStyle(fontSize: 18)),
+                      // ),
                       subtitle: Padding(
                         padding: const EdgeInsets.only(top: 8.0),
-                        child: Text('${items[index]['projectName']}', style: TextStyle(fontSize: 18)),
+                        child: RichText(
+                          text: TextSpan(children: [
+                            TextSpan(text:'${items[index]['projectName']}\n', style: TextStyle(fontSize: 18, color: Colors.black)),
+                            TextSpan(text:'${items[index]['projectDescription']}\n', style: TextStyle(fontSize: 16, color: Colors.black)),
+                          ])
+                        )
                       ),
-                      trailing: Text('${items[index]['category']}', style: TextStyle(fontSize: 16)),
+                      trailing: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('${items[index]['category']}', style: TextStyle(fontSize: 16))
+                        ]
+                      ),
                       onTap: () {
                         Navigator.of(context).pushNamed(ProjectDetail.routeName);
                       },
