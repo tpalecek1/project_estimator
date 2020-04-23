@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1079244026422",
+    "firebase_url": "https://project-estimator-d6866.firebaseio.com",
+    "project_id": "project-estimator-d6866",
+    "storage_bucket": "project-estimator-d6866.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1079244026422:android:1afd53440d726368621e97",
+        "android_client_info": {
+          "package_name": "com.example.project_estimator"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1079244026422-f0tdov2a08tgoub4ak432htut72oi02d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhFLPoXwmqZi7R6SpuFXQn1egkvbUc_Us"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1079244026422-f0tdov2a08tgoub4ak432htut72oi02d.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1079244026422-hkgddu50f5dee34qmnngv201lvpectaq.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.projectEstimator"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
