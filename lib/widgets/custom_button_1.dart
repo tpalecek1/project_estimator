@@ -13,6 +13,7 @@ class CustomButton1 extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: MaterialButton(
+        shape: RoundedRectangleBorder(borderRadius:BorderRadius.circular(15.0)),
         elevation: 2.0,
         height: double.maxFinite,
         color: Colors.grey[300],

@@ -1,6 +1,6 @@
 class PaintSettings{
   double paintLow, paintMid, paintHigh, paintCoverage,
-  laborRate, doorCost, windowCost, accentWallCost, trim;
+  laborRate, productionRate, doorCost, windowCost, accentWallCost, trim;
 
   //Default constructor, all attributes are optional named parameters with default values
   PaintSettings({
@@ -9,6 +9,7 @@ class PaintSettings{
     this.paintHigh = 35.0,
     this.paintCoverage = 300,
     this.laborRate = 50.0,
+    this.productionRate = 300,
     this.doorCost = 75,
     this.windowCost = 50,
     this.accentWallCost = 30,
@@ -21,6 +22,7 @@ class PaintSettings{
     paintHigh = map['paintHigh'];
     paintCoverage = map['paintCoverage'];
     laborRate = map['laborRate'];
+    productionRate = map['productionRate'];
     doorCost = map['doorCost'];
     windowCost = map['windowCost'];
     accentWallCost = map['accentWallCost'];

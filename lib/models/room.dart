@@ -1,4 +1,5 @@
 class Room {
+  int id;
   String name;
   double ceilingHeight, length, width;
   int doorCount, windowCount, accentWallCount;
@@ -6,6 +7,7 @@ class Room {
   List<String> photos;
 
   Room({
+    this.id,
     this.name = 'Room',
     this.ceilingHeight = 0,
     this.length = 0,
@@ -20,6 +22,7 @@ class Room {
   });
 
   Room.fromMap(dynamic map){
+    id = map['id'];
     name = map['name'];
     ceilingHeight = map['ceilingHeight'];
     length = map['length'];

@@ -1,10 +1,12 @@
 import 'package:intl/intl.dart';
 
 class Project {
+  int id;
   String name, status, description, clientName, clientAddress, clientPhoneNumber;
   DateTime date;
 
   Project({
+    this.id,
     this.name = "",
     this.status = "not bid",
     this.description = "",
@@ -15,6 +17,7 @@ class Project {
   });
 
   Project.fromMap(dynamic map){
+    id = map['id'];
     name = map['name'];
     status = map["status"];
     description = map["description"];
