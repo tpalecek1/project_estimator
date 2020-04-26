@@ -1,18 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:project_estimator/screens/project_detail.dart';
 import 'package:project_estimator/screens/user_setting.dart';
+import 'package:project_estimator/widgets/my_popup_menu.dart' as mypopup;
 
 import 'edit_project.dart';
 
-class ProjectList extends StatelessWidget {
+class ProjectList extends StatefulWidget {
+  @override
+  _ProjectListState createState() => _ProjectListState();
+}
+
+class _ProjectListState extends State<ProjectList> {
+  TextEditingController controller = TextEditingController();
+  bool showCancel = false;
+  String _selectedCategory;
   //fake list data
   final items = List<Map>.generate(100, (i) {
     return {
-      'date':'Date $i',
-      'projectName':'Project $i',
-      'category':'category $i'
+      'date':'2020-04-21 08:00',
+      'projectName':'Project ${i+1}',
+      'projectDescription':'project ${i+1} description', 
+      'category': category(i)
     };
   });
+  static String category(int i) {
+    i = i%6;
+    switch(i) {
+      case 0:
+        return "bid";
+      case 1:
+        return "not bid";
+      case 2:
+        return "awarded";
+      case 3:
+        return "not awarded";
+      case 4:
+        return "started";
+      case 5:
+        return "complete";
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -29,34 +57,143 @@ class ProjectList extends StatelessWidget {
       ),
       body: Column(
         children: [
-          Flexible(
-            flex: 1,
+          SizedBox(
+            height: 50,
             child: Row(children: [
-              Flexible(child: Padding(
+              Expanded(child: Padding(
+                padding: const EdgeInsets.only(left: 8, right: 4, top: 4, bottom: 4),
+                child: Card(
+                  shape: RoundedRectangleBorder(
+                    side: BorderSide(color: Colors.blue, width: 1),
+                    borderRadius: BorderRadius.circular(15.0),
+                  ),
+                  child: Row(
+                    children:[
+                      Expanded(
+                        child: TextField(
+                          controller: controller,
+                          decoration: InputDecoration(
+                            hintText: 'Search', border: InputBorder.none, contentPadding: const EdgeInsets.only(left: 12, bottom: 12)
+                          ),
+                          onChanged: onSearchTextChanged,
+                        ),
+                      ),
+                      Visibility(
+                        visible: showCancel,
+                        child: IconButton(
+                          padding: EdgeInsets.only(bottom: 2),
+                          color: Colors.blue,
+                          icon: Icon(Icons.cancel), 
+                          onPressed: () {
+                            controller.clear();
+                            showCancel = false;
+                            setState((){});
+                        })
+                      ),
+                    ]
+                  ),
+                ),
+              )),
+              Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Placeholder(),
-              ), flex: 3),
-              Flexible(child: Padding(
+                child: Material(
+                  child: Ink(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.black, width: 1.0),
+                      color: Colors.white,
+                      shape: BoxShape.rectangle,
+                    ),
+                    child: InkWell(
+                      onTap: (){
+                        //todo
+                        FocusScope.of(context).requestFocus(FocusNode());
+                      },
+                      child: SizedBox(
+                        width: 50,
+                        child: Icon(
+                            Icons.search,
+                            size: 30.0,
+                            color: Colors.black,
+                        ),
+                      ),                    
+                    ),
+                  )
+                )
+              ),
+              Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Placeholder(),
-              ), flex: 1),
-              Flexible(child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Placeholder(),
-              ), flex: 1),
-            ])),
-          Flexible(
-            flex: 9,
+                child: Material(
+                  child: Ink(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.black, width: 1.0),
+                      color: Colors.white,
+                      shape: BoxShape.rectangle,
+                    ),
+                    child: mypopup.PopupMenuButton<String>(
+                      elevation: 20,
+                      tooltip: 'Select a category',
+                      padding: EdgeInsets.all(0),
+                      icon: Icon(Icons.filter_list),
+                      onSelected: (newValue) {
+                        FocusScope.of(context).requestFocus(FocusNode()); //to unfocus serach textField, weird way, check alternative way later
+                        //widget.filter(newValue);
+                        setState(() {
+                          _selectedCategory = newValue;
+                        });
+                      },
+                      itemBuilder: (BuildContext context) {
+                        return <String>['all', 'bid', 'not bid', 'awarded', 'not awarded', 'started', 'complete'].map((String choice) {
+                          return mypopup.PopupMenuItem<String>(
+                            value: choice,
+                            child: Container(
+                              width: double.infinity,
+                              height: double.infinity,
+                              color: choice == _selectedCategory ? Colors.blue[100] : null,
+                              child: Center(child: Text(choice)) //must use Center for this custom popup widget, otherwise strange layout appear
+                            ),
+                          );
+                        }).toList();
+                      },
+                    )
+                  )
+                )
+              ),
+            ])
+          ),
+          Divider(height: 1),
+          Expanded(
             child: ListView.builder(
               itemCount: items.length,
               itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text('${items[index]['projectName']}'),
-                  subtitle: Text('${items[index]['date']}'),
-                  trailing: Text('${items[index]['category']}'),
-                  onTap: () {
-                    Navigator.of(context).pushNamed(ProjectDetail.routeName);
-                  },
+                return Column(
+                  children: [
+                    ListTile(
+                      title: Text('${items[index]['date']}', style: TextStyle(color: Colors.blue, fontSize: 12)),
+                      // subtitle: Padding(
+                      //   padding: const EdgeInsets.only(top: 8.0),
+                      //   child: Text('${items[index]['projectName']}', style: TextStyle(fontSize: 18)),
+                      // ),
+                      subtitle: Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: RichText(
+                          text: TextSpan(children: [
+                            TextSpan(text:'${items[index]['projectName']}\n', style: TextStyle(fontSize: 18, color: Colors.black)),
+                            TextSpan(text:'${items[index]['projectDescription']}\n', style: TextStyle(fontSize: 16, color: Colors.black)),
+                          ])
+                        )
+                      ),
+                      trailing: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('${items[index]['category']}', style: TextStyle(fontSize: 16))
+                        ]
+                      ),
+                      onTap: () {
+                        Navigator.of(context).pushNamed(ProjectDetail.routeName);
+                      },
+                    ),
+                    Divider(height: 1)
+                  ]
                 );
               }
             ),
@@ -71,6 +208,18 @@ class ProjectList extends StatelessWidget {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat
     );
-    
+  }
+  void onSearchTextChanged(String text) {
+    //todo: search functionality
+    if(text.isEmpty) {
+      showCancel = false;
+      setState(() {});
+      return;
+    } else {
+      showCancel = true;
+      setState(() {});
+      return;
+    }
   }
 }
+
