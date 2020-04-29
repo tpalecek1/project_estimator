@@ -5,7 +5,7 @@ import 'package:project_estimator/services/auth.dart';
 import 'package:project_estimator/screens/signup_login.dart';
 
 String temp = 'https://firebasestorage.googleapis.com/v0/b/wasteagram-18a5f.appspot.com/o/2020-03-17%2005%3A24%3A38.249222?alt=media&token=514559cf-ad73-4692-8d22-7568a0f26089';
-//todo: reduce duplicate code
+//todo: reduce duplicate code that upadte values throught firebase
 class UserSetting extends StatelessWidget {
 
   static const routeName = 'user_setting';
@@ -20,14 +20,11 @@ class UserSetting extends StatelessWidget {
       appBar: AppBar(
         title: Text('User Settings'),
         actions: [
-          IconButton(
-            icon: Icon(Icons.exit_to_app),
-            onPressed: () async {
-              await _auth.signOut();
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (ctx) => SignupLogin()), (_) => false
-              );
-            },
+          FlatButton(
+            onPressed: (){
+              showLogoutDialog(context);
+            }, 
+            child: Text('Logout', style: TextStyle(fontSize: 17.0, color: Colors.white))
           )
         ],
       ),
@@ -51,7 +48,7 @@ class UserSetting extends StatelessWidget {
                       bottom: 5,
                       right: 10,
                       child: IconButton(icon: Icon(Icons.photo), onPressed: (){
-                        //todo
+                        //todo: choose a pic to save and put into image
                       })
                     )
                   ]
@@ -89,6 +86,38 @@ class UserSetting extends StatelessWidget {
         ),
       )
     );
+  }
+
+  void showLogoutDialog(BuildContext context) {
+    showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        content: Text('Are you sure to logout?'),
+        actions: [
+          FlatButton(
+            onPressed: (){
+              Navigator.of(context).pop();
+            }, 
+            child: Text('cancel')
+          ),  
+          FlatButton(
+            onPressed: (){
+              logout(context);
+              Navigator.of(context).pop();
+            }, 
+            child: Text('ok')
+          ),        
+        ],
+      );  
+    });
+  }
+
+  void logout(BuildContext context) async {
+    await _auth.signOut();
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (ctx) => SignupLogin()), (_) => false
+    );   
   }
 }
 
@@ -239,41 +268,59 @@ class _PaintSettingBoxState extends State<PaintSettingBox> {
   }
 }
 
-class SettingRow extends StatelessWidget {
+class SettingRow extends StatefulWidget {
   final String title;
   final String content;
   final Function(String) updateAction;
   SettingRow({Key key, @required this.title, @required this.content, @required this.updateAction}):super();
 
   @override
+  _SettingRowState createState() => _SettingRowState();
+}
+
+class _SettingRowState extends State<SettingRow> {
+
+  // Create a text controller and use it to retrieve the current value of the TextField.
+  TextEditingController _myController;
+  @override
+  void initState() {
+    _myController = TextEditingController(text: widget.content); //widget.content can not used before initstate()
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    // Clean up the controller when the widget is disposed.
+    _myController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Text(title, style: Theme.of(context).textTheme.subtitle),
+        Text(widget.title, style: Theme.of(context).textTheme.subtitle),
         SizedBox(width: 5),
-        Expanded(child: Container(alignment: Alignment.centerRight, child: Text(content, textAlign: TextAlign.right))),
+        Expanded(child: Container(alignment: Alignment.centerRight, child: Text(widget.content, textAlign: TextAlign.right))),
         SizedBox(width: 5),
         RaisedButton(onPressed: (){
-          _showDialog(context, title, content);
+          _showDialog(widget.title, widget.content);
         }, child: Text('change'))
       ],
     );
   }
-  _showDialog(BuildContext context, String title, String content) {
+
+  _showDialog(String title, String content) {
     showDialog(
       context: context,
       builder: (context) {
-        String updateValue; //temp, will adjust on week 8
         return AlertDialog(
           content: TextFormField(
-            initialValue: content,
+            controller: _myController,
+            //initialValue: content,    //note: initialValue and controller can not be used at the same time
             decoration: InputDecoration(
               labelText: title, border: OutlineInputBorder()
-            ),
-            onSaved: (value) {
-              //todo: save the value
-              updateValue = value;
-            },
+            )
           ),
           actions: [
             FlatButton(
@@ -285,7 +332,8 @@ class SettingRow extends StatelessWidget {
             FlatButton(
               onPressed: (){
                 //todo upate the data
-                updateAction(updateValue);
+                  //print(_myController.text);  //test only
+                widget.updateAction(_myController.text);
                 Navigator.of(context).pop();
               }, 
               child: Text('Update')
