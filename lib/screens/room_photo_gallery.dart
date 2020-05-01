@@ -25,11 +25,11 @@ class GalleryScreen extends StatefulWidget {
 }
 
 class _GalleryScreenState extends State<GalleryScreen> {
-  List<String> images;
+  Room room;
 
   @override
   void initState() {
-    images = getImages(); //get faked data
+    room = getRoom(); //get faked data
     super.initState();
   }
 
@@ -41,7 +41,8 @@ class _GalleryScreenState extends State<GalleryScreen> {
           SliverPersistentHeader(
             delegate: HeroHeader(
               minExtent: 100.0, //when more, header get exapnd height until maxExtant reaches; when less, no shrink, just move away
-              maxExtent: 250.0 // header expand to most this height
+              maxExtent: 250.0, // header expand to most this height
+              roomName: room.name
             )
           ),
           SliverGrid(
@@ -64,7 +65,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
                         },
                         child: FadeInImage.memoryNetwork(
                           placeholder: kTransparentImage,
-                          image: images[index],
+                          image: room.photos[index],
                           height: 250.0,
                           width: 250.0,
                           fit: BoxFit.cover,
@@ -99,7 +100,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
                                     onPressed: (){
                                       setState(() {
                                         //todo: delete an image
-                                        images.remove(images[index]);
+                                        room.photos.remove(room.photos[index]);
                                       });
                                       Navigator.of(context).pop();
                                     }, 
@@ -111,13 +112,13 @@ class _GalleryScreenState extends State<GalleryScreen> {
                             }
                           );
                         },
-                        child: Icon(Icons.delete)
+                        child: Icon(Icons.delete_forever, color: Colors.red)
                       )
                     )
                   ],
                 );
               },
-              childCount: images.length,
+              childCount: room.photos.length,
             ),
           ),
 
@@ -125,8 +126,9 @@ class _GalleryScreenState extends State<GalleryScreen> {
       )
     );
   }
-  List<String> getImages() {
+  Room getRoom() {
     Room room = Room();
+    room.name = 'Living Room';
     List<String> photos = List();
     //make faked images data in room
     photos.add('https://firebasestorage.googleapis.com/v0/b/wasteagram-18a5f.appspot.com/o/2020-04-30%2018%3A19%3A30.170261?alt=media&token=40879f95-13cf-4345-9a98-074574d30b7d');
@@ -135,7 +137,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
     photos.add('https://firebasestorage.googleapis.com/v0/b/wasteagram-18a5f.appspot.com/o/2020-03-17%2005%3A24%3A38.249222?alt=media&token=514559cf-ad73-4692-8d22-7568a0f26089');
     photos.add('https://firebasestorage.googleapis.com/v0/b/wasteagram-18a5f.appspot.com/o/2020-04-30%2018%3A21%3A03.694362?alt=media&token=59f9d37d-0340-477f-a1fd-51012b1174e7');
     room.photos = photos;
-    return room.photos;
+    return room;
   }
 }
 
@@ -144,8 +146,9 @@ class HeroHeader implements SliverPersistentHeaderDelegate {
   //exapnd and shrink factors
   double maxExtent;
   double minExtent;
+  String roomName;
 
-  HeroHeader({this.maxExtent, this.minExtent});
+  HeroHeader({this.maxExtent, this.minExtent, this.roomName});
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
@@ -174,7 +177,7 @@ class HeroHeader implements SliverPersistentHeaderDelegate {
           left: 16.0,
           right: 16.0,
           bottom: 16.0,
-          child: Text('Room photo Gallery', style: TextStyle(fontSize: 32.0, color: Colors.white)
+          child: Text(roomName, style: TextStyle(fontSize: 32.0, color: Colors.white)
           ),
         ),
       ],
