@@ -6,11 +6,12 @@ import 'package:project_estimator/screens/room_detail.dart';
 import 'package:project_estimator/widgets/custom_button_1.dart';
 import '../models/project.dart';
 import '../models/room.dart';
+import '../models/fake_data.dart';
 
 class ProjectDetail extends StatefulWidget{
-  ProjectDetail({Key key}) : super(key: key);
+  ProjectDetail({Key key, this.project}) : super(key: key);
   static const routeName = 'project_detail';
-
+  final Project project;
   @override
   _ProjectDetailState createState() => _ProjectDetailState();
 }
@@ -210,9 +211,8 @@ class _ProjectDetailState extends State<ProjectDetail> {
   }
 
   void getFakeData(){
-    project = Project(id: 0, name: 'Painting house', clientName: 'Sherlock', clientAddress: '221B Baker St.', description: 'Painting Exterior');
-    rooms.add(Room(name: 'Kitchen', id: 0, ceilingHeight: 10, length: 12, width: 15, doorCount: 2, windowCount: 4, hasBaseboard: true));
-    rooms.add(Room(name: 'Bedroom', id: 1, ceilingHeight: 12, length: 16, width: 16, doorCount: 1, windowCount: 2, hasBaseboard: true, hasCrown: true));
-    rooms.add(Room(name: 'Bathroom', id: 2, ceilingHeight: 8, length: 11, width: 10, doorCount: 1, windowCount: 0, accentWallCount: 1));
+    project = widget.project;
+    FakeData fakeData = FakeData();
+    rooms = fakeData.getRooms(project.id);
   }
 }

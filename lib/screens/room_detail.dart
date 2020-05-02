@@ -3,6 +3,7 @@ import 'package:project_estimator/screens/room_photo_gallery.dart';
 import '../models/room.dart';
 import '../models/room_note.dart';
 import '../widgets/custom_button_1.dart';
+import '../models/fake_data.dart';
 
 class RoomDetail extends StatefulWidget{
   RoomDetail({Key key, this.room}) : super(key: key);
@@ -313,11 +314,12 @@ class _RoomDetailState extends State<RoomDetail> {
   }
   }
   void getFakeData(){
-  room = widget.room;
-  notes.add(RoomNote(id: 0, description: 'Painting Cabinets'));
-  notes.add(RoomNote(id: 1, description: 'De-grease walls'));
-  notes.add(RoomNote(id: 2, description: 'Hard-to-reach areas'));
-  notes.add(RoomNote(id: 3, description: 'Lots of masking'));
-  notes.add(RoomNote(id: 4, description: 'Minor drywall damage'));
+    room = widget.room;
+    notes = FakeData().getRoomNotes(room.id);
+    /* notes.add(RoomNote(id: 0, description: 'Painting Cabinets'));
+    notes.add(RoomNote(id: 1, description: 'De-grease walls'));
+    notes.add(RoomNote(id: 2, description: 'Hard-to-reach areas'));
+    notes.add(RoomNote(id: 3, description: 'Lots of masking'));
+    notes.add(RoomNote(id: 4, description: 'Minor drywall damage')); */
   }
 }
