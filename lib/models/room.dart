@@ -1,5 +1,5 @@
 class Room {
-  int id;
+  final String id;
   String name;
   double ceilingHeight, length, width;
   int doorCount, windowCount, accentWallCount;
@@ -18,22 +18,38 @@ class Room {
     this.hasCrown = false,
     this.hasChairRail = false,
     this.hasBaseboard = false,
-    this.photos,
-  });
+    List<String> photos }) {
+    this.photos = photos ?? List<String>();
+  }
 
-  Room.fromMap(dynamic map){
-    id = map['id'];
-    name = map['name'];
-    ceilingHeight = map['ceilingHeight'];
-    length = map['length'];
-    width = map['width'];
-    doorCount = map['doorCount'];
-    windowCount = map['windowCount'];
-    accentWallCount = map['accentWallCount'];
-    hasCrown = map['hasCrown'];
-    hasChairRail = map['hasChairRail'];
-    hasBaseboard = map['hasBaseboard'];
-    photos = map['photos'];
+  Room.fromMap(Map<String, dynamic> map, String roomId) :
+    id = roomId,
+    name = map['name'],
+    ceilingHeight = map['ceilingHeight'],
+    length = map['length'],
+    width = map['width'],
+    doorCount = map['doorCount'],
+    windowCount = map['windowCount'],
+    accentWallCount = map['accentWallCount'],
+    hasCrown = map['hasCrown'],
+    hasChairRail = map['hasChairRail'],
+    hasBaseboard = map['hasBaseboard'],
+    photos = List.from(map['photos']);
+
+  Map<String, dynamic> toMap() {
+    return {
+    'name': name,
+    'ceilingHeight': ceilingHeight,
+    'length': length,
+    'width': width,
+    'doorCount': doorCount,
+    'windowCount': windowCount,
+    'accentWallCount': accentWallCount,
+    'hasCrown': hasCrown,
+    'hasChairRail': hasChairRail,
+    'hasBaseboard': hasBaseboard,
+    'photos': photos
+    };
   }
 
   void addPhoto(String url){
@@ -59,4 +75,28 @@ class Room {
     if(hasCrown) crown = (length * 2) + (width * 2);
     return base + chair + crown;
   }
+
+
+  @override
+  bool operator==(Object other) =>
+      other is Room &&
+          /*other.id == id &&*/
+          other.name == name &&
+          other.ceilingHeight == ceilingHeight &&
+          other.length == length &&
+          other.width == width &&
+          other.doorCount == doorCount &&
+          other.windowCount == windowCount &&
+          other.accentWallCount == accentWallCount &&
+          other.hasCrown == hasCrown &&
+          other.hasChairRail == hasChairRail &&
+          other.hasBaseboard == hasBaseboard &&
+          other.photos.join() == photos.join();
+
+  @override
+  int get hashCode => /*id.hashCode^*/name.hashCode^ceilingHeight.hashCode^
+                      length.hashCode^width.hashCode^doorCount.hashCode^
+                      windowCount.hashCode^accentWallCount.hashCode^
+                      hasCrown.hashCode^hasChairRail.hashCode^hasBaseboard.hashCode^
+                      photos.join().hashCode;
 }

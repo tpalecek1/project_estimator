@@ -1,5 +1,5 @@
 class ProjectNote {
-  int id;
+  final String id;
   bool hasCost;
   String description;
 
@@ -9,9 +9,26 @@ class ProjectNote {
     this.description = ""
   });
 
-  ProjectNote.fromMap(dynamic map){
-    id = map['id'];
-    hasCost = map['hasCost'];
+  ProjectNote.fromMap(Map<String, dynamic> map, String projectNoteId) :
+    id = projectNoteId,
+    hasCost = map['hasCost'],
     description = map['description'];
+
+  Map<String, dynamic> toMap() {
+    return {
+      'hasCost': hasCost,
+      'description': description,
+    };
   }
+
+
+  @override
+  bool operator==(Object other) =>
+      other is ProjectNote &&
+      /*other.id == id &&*/
+      other.hasCost == hasCost &&
+      other.description == description;
+
+  @override
+  int get hashCode => /*id.hashCode^*/hasCost.hashCode^description.hashCode;
 }
