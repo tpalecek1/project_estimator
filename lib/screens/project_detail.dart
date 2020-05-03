@@ -149,7 +149,7 @@ class _ProjectDetailState extends State<ProjectDetail> {
                 Expanded(
                   child: CustomButton1(
                     onPressed: () {
-                      Navigator.of(context).pushNamed(EditProject.routeName);
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => EditProject(project: project)));
                     },
                     child: Text('Edit Project')
                   )

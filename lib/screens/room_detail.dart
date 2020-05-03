@@ -301,7 +301,7 @@ class _RoomDetailState extends State<RoomDetail> {
                   child: ListTile(
                     title: Text('${notes[index].description}'),
                     onTap: () {
-                      Navigator.of(context).pushNamed(RoomDetail.routeName);
+                      //
                     },
                   ),
                 );
