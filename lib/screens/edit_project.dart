@@ -7,10 +7,12 @@ import 'package:project_estimator/widgets/new_note_dialog.dart';
 import '../models/project.dart';
 import '../models/room.dart';
 import '../widgets/new_note_dialog.dart';
+import '../models/fake_data.dart';
 
 class EditProject extends StatefulWidget{
-  EditProject({Key key}) : super(key: key);
+  EditProject({Key key, this.project}) : super(key: key);
   static const routeName = 'edit_project';
+  Project project;
 
   @override
   _EditProjectState createState() => _EditProjectState();
@@ -63,8 +65,6 @@ class _EditProjectState extends State<EditProject> {
       );
     }
     else{
-    //fake rooms data
-    print(rooms);
     return Form(
       key: formKey,
       child: Column(
@@ -211,7 +211,7 @@ class _EditProjectState extends State<EditProject> {
                 child: CustomButton1(
                   onPressed: () {
                     //todo: add a room
-                    Navigator.of(context).pushNamed(EditRoom.routeName);
+                    Navigator.of(context).push(MaterialPageRoute(builder: (context) => EditRoom(room: Room())));
                   },
                   child: Text('Add Room'),
                 )
@@ -240,7 +240,9 @@ class _EditProjectState extends State<EditProject> {
                   child: ListTile(
                     title: Text(rooms[index].name),
                     trailing: Icon(Icons.edit),
-                    onTap: () => {}, //todo - go to edit room page for clicked room
+                    onTap: () => {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => EditRoom(room: rooms[index])))
+                    }, //todo - go to edit room page for clicked room
                   )
                 );
               }),
@@ -252,10 +254,12 @@ class _EditProjectState extends State<EditProject> {
   }
 
   void getFakeData() {
-    rooms.add(Room(name: "Bedroom", id: 1));
+    project = widget.project;
+    rooms = FakeData().getRooms(project.id);
+    /* rooms.add(Room(name: "Bedroom", id: 1));
     rooms.add(Room(name: "Bathroom", id: 2));
     rooms.add(Room(name: "Kitchen", id: 3));
     Project fakeProject = Project(id: 1, name: "Test Project", clientName: "Sherlock", clientAddress: "221B Baker St.", description: "Painting Exterior");
-    project = fakeProject;
+    project = fakeProject; */
   }
 }

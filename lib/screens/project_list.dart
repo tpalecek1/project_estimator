@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:project_estimator/models/fake_data.dart';
 import 'package:project_estimator/screens/project_detail.dart';
 import 'package:project_estimator/screens/user_setting.dart';
 import 'package:project_estimator/widgets/my_popup_menu.dart' as mypopup;
+import '../models/fake_data.dart';
+import '../models/project.dart';
 
 import 'edit_project.dart';
 
@@ -14,32 +17,8 @@ class _ProjectListState extends State<ProjectList> {
   TextEditingController controller = TextEditingController();
   bool showCancel = false;
   String _selectedCategory;
-  //fake list data
-  final items = List<Map>.generate(100, (i) {
-    return {
-      'date':'2020-04-21 08:00',
-      'projectName':'Project ${i+1}',
-      'projectDescription':'project ${i+1} description', 
-      'category': category(i)
-    };
-  });
-  static String category(int i) {
-    i = i%6;
-    switch(i) {
-      case 0:
-        return "bid";
-      case 1:
-        return "not bid";
-      case 2:
-        return "awarded";
-      case 3:
-        return "not awarded";
-      case 4:
-        return "started";
-      case 5:
-        return "complete";
-    }
-  }
+  //fake data
+  List<Project> projects = FakeData().getProjects();
 
   @override
   Widget build(BuildContext context) {
@@ -163,12 +142,12 @@ class _ProjectListState extends State<ProjectList> {
           Divider(height: 1),
           Expanded(
             child: ListView.builder(
-              itemCount: items.length,
+              itemCount: projects.length,
               itemBuilder: (context, index) {
                 return Column(
                   children: [
                     ListTile(
-                      title: Text('${items[index]['date']}', style: TextStyle(color: Colors.blue, fontSize: 12)),
+                      title: Text(DateTime.now().toString(), style: TextStyle(color: Colors.blue, fontSize: 12)),
                       // subtitle: Padding(
                       //   padding: const EdgeInsets.only(top: 8.0),
                       //   child: Text('${items[index]['projectName']}', style: TextStyle(fontSize: 18)),
@@ -177,19 +156,19 @@ class _ProjectListState extends State<ProjectList> {
                         padding: const EdgeInsets.only(top: 8.0),
                         child: RichText(
                           text: TextSpan(children: [
-                            TextSpan(text:'${items[index]['projectName']}\n', style: TextStyle(fontSize: 18, color: Colors.black)),
-                            TextSpan(text:'${items[index]['projectDescription']}\n', style: TextStyle(fontSize: 16, color: Colors.black)),
+                            TextSpan(text:'${projects[index].name}\n', style: TextStyle(fontSize: 18, color: Colors.black)),
+                            TextSpan(text:'${projects[index].description}\n', style: TextStyle(fontSize: 16, color: Colors.black)),
                           ])
                         )
                       ),
                       trailing: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text('${items[index]['category']}', style: TextStyle(fontSize: 16))
+                          Text('${projects[index].status}', style: TextStyle(fontSize: 16))
                         ]
                       ),
                       onTap: () {
-                        Navigator.of(context).pushNamed(ProjectDetail.routeName);
+                        Navigator.of(context).push(MaterialPageRoute(builder: (context) => ProjectDetail(project: projects[index])));
                       },
                     ),
                     Divider(height: 1)
@@ -202,7 +181,7 @@ class _ProjectListState extends State<ProjectList> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.of(context).pushNamed(EditProject.routeName);
+          Navigator.of(context).push(MaterialPageRoute(builder: (context) => EditProject(project: Project())));
         },
         child: Icon(Icons.add),
       ),

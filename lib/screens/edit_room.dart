@@ -3,11 +3,13 @@ import 'package:project_estimator/screens/room_photo_gallery.dart';
 import 'package:project_estimator/widgets/custom_button_1.dart';
 import '../models/room.dart';
 import '../models/room_note.dart';
+import '../models/fake_data.dart';
 import '../widgets/checkbox_form_field.dart';
 import '../widgets/new_note_dialog.dart';
 
 class EditRoom extends StatefulWidget {
-  EditRoom({Key key}) : super(key: key);
+  EditRoom({Key key, this.room}) : super(key: key);
+  final Room room;
   static const routeName = 'edit_room';
 
   @override 
@@ -250,11 +252,10 @@ class _EditRoomState extends State<EditRoom> {
     );
   }
   void getFakeData() {
-    Room fakeRoom = Room(name: "Bedroom", ceilingHeight: 8, length: 15, width: 20, doorCount: 2, windowCount: 4, accentWallCount: 1, hasBaseboard: true);
-    room = fakeRoom;
-    notes.add(RoomNote(description: "Vaulted Ceiling", id: 1));
-    notes.add(RoomNote(description: "Dark Colors", id: 2));
-    notes.add(RoomNote(description: "Nail holes and minor drywall damage, note this container will expand to fit all text", id: 3));
+    room = widget.room;
+    if(room.id != null){
+      notes = FakeData().getRoomNotes(room.id);
+    }
   }
 }
 
