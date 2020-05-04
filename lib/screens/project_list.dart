@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:project_estimator/models/fake_data.dart';
 import 'package:project_estimator/screens/project_detail.dart';
 import 'package:project_estimator/screens/user_setting.dart';
@@ -16,10 +17,19 @@ class ProjectList extends StatefulWidget {
 class _ProjectListState extends State<ProjectList> {
   TextEditingController controller = TextEditingController();
   bool showCancel = false;
-  String _selectedCategory;
+  String _selectedStatus = 'all';
+  String _searchWord = "";
   //fake data
   List<Project> projects = FakeData().getProjects();
+  List<Project> filteredProjects;
+  DateFormat formatter;
 
+  @override
+  void initState() {
+    super.initState();
+    filteredProjects = projects;
+    formatter = DateFormat('y-MM-dd HH:mm');
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -65,6 +75,7 @@ class _ProjectListState extends State<ProjectList> {
                           icon: Icon(Icons.cancel), 
                           onPressed: () {
                             controller.clear();
+                            _searchWord = "";
                             showCancel = false;
                             setState((){});
                         })
@@ -85,6 +96,7 @@ class _ProjectListState extends State<ProjectList> {
                     child: InkWell(
                       onTap: (){
                         //todo
+                        filter();
                         FocusScope.of(context).requestFocus(FocusNode());
                       },
                       child: SizedBox(
@@ -116,9 +128,8 @@ class _ProjectListState extends State<ProjectList> {
                       onSelected: (newValue) {
                         FocusScope.of(context).requestFocus(FocusNode()); //to unfocus serach textField, weird way, check alternative way later
                         //widget.filter(newValue);
-                        setState(() {
-                          _selectedCategory = newValue;
-                        });
+                        _selectedStatus = newValue;
+                        filter();
                       },
                       itemBuilder: (BuildContext context) {
                         return <String>['all', 'bid', 'not bid', 'awarded', 'not awarded', 'started', 'complete'].map((String choice) {
@@ -127,7 +138,7 @@ class _ProjectListState extends State<ProjectList> {
                             child: Container(
                               width: double.infinity,
                               height: double.infinity,
-                              color: choice == _selectedCategory ? Colors.blue[100] : null,
+                              color: choice == _selectedStatus ? Colors.blue[100] : null,
                               child: Center(child: Text(choice)) //must use Center for this custom popup widget, otherwise strange layout appear
                             ),
                           );
@@ -142,12 +153,12 @@ class _ProjectListState extends State<ProjectList> {
           Divider(height: 1),
           Expanded(
             child: ListView.builder(
-              itemCount: projects.length,
+              itemCount: filteredProjects.length,
               itemBuilder: (context, index) {
                 return Column(
                   children: [
                     ListTile(
-                      title: Text(DateTime.now().toString(), style: TextStyle(color: Colors.blue, fontSize: 12)),
+                      title: Text(formatter.format(filteredProjects[index].date), style: TextStyle(color: Colors.blue, fontSize: 12)),
                       // subtitle: Padding(
                       //   padding: const EdgeInsets.only(top: 8.0),
                       //   child: Text('${items[index]['projectName']}', style: TextStyle(fontSize: 18)),
@@ -156,19 +167,19 @@ class _ProjectListState extends State<ProjectList> {
                         padding: const EdgeInsets.only(top: 8.0),
                         child: RichText(
                           text: TextSpan(children: [
-                            TextSpan(text:'${projects[index].name}\n', style: TextStyle(fontSize: 18, color: Colors.black)),
-                            TextSpan(text:'${projects[index].description}\n', style: TextStyle(fontSize: 16, color: Colors.black)),
+                            TextSpan(text:'${filteredProjects[index].name}\n', style: TextStyle(fontSize: 18, color: Colors.black)),
+                            TextSpan(text:'${filteredProjects[index].description}\n', style: TextStyle(fontSize: 16, color: Colors.black)),
                           ])
                         )
                       ),
                       trailing: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text('${projects[index].status}', style: TextStyle(fontSize: 16))
+                          Text('${filteredProjects[index].status}', style: TextStyle(fontSize: 16))
                         ]
                       ),
                       onTap: () {
-                        Navigator.of(context).push(MaterialPageRoute(builder: (context) => ProjectDetail(project: projects[index])));
+                        Navigator.of(context).push(MaterialPageRoute(builder: (context) => ProjectDetail(project: filteredProjects[index])));
                       },
                     ),
                     Divider(height: 1)
@@ -189,6 +200,7 @@ class _ProjectListState extends State<ProjectList> {
     );
   }
   void onSearchTextChanged(String text) {
+    _searchWord = text;
     //todo: search functionality
     if(text.isEmpty) {
       showCancel = false;
@@ -200,5 +212,26 @@ class _ProjectListState extends State<ProjectList> {
       return;
     }
   }
+
+  void filter() {
+    // print(_searchWord);
+    setState(() {
+      if(_selectedStatus == 'all' && _searchWord.isEmpty) { //if filter 'all', and search '', go here
+        filteredProjects = projects;
+      } else if(_selectedStatus != 'all' && _searchWord.isEmpty) { //if filter a specific status, and search '', go here
+        filteredProjects = projects.where((project)=>project.status.toLowerCase() == (_selectedStatus.toLowerCase())).toList();
+      } else if (_selectedStatus == 'all' && _searchWord.isNotEmpty) { //if filter 'all', and search a specific keyword, go here
+        filteredProjects = projects.where((project)=>project.name.toLowerCase().contains(_searchWord.toLowerCase())
+                                                  ||project.description.toLowerCase().contains(_searchWord.toLowerCase())
+                                                  ||formatter.format(project.date).contains(_searchWord)).toList();
+      } else if (_selectedStatus != 'all' && _searchWord.isNotEmpty){ //if filter a specific status, and search a specific keyword, go here
+        print(filteredProjects[0].status);
+        filteredProjects = projects.where((project)=>project.status.toLowerCase() == (_selectedStatus.toLowerCase())).toList();
+        filteredProjects = filteredProjects.where((project)=>project.name.toLowerCase().contains(_searchWord.toLowerCase())
+                                                  ||project.description.toLowerCase().contains(_searchWord.toLowerCase())
+                                                  ||formatter.format(project.date).contains(_searchWord)).toList();
+      } 
+    });
+  }  
 }
 
