@@ -255,7 +255,9 @@ class _EditProjectState extends State<EditProject> {
 
   void getFakeData() {
     project = widget.project;
-    rooms = FakeData().getRooms(project.id);
+    if(project.id != null){
+      rooms = FakeData().getRooms(project.id);
+    }
     /* rooms.add(Room(name: "Bedroom", id: 1));
     rooms.add(Room(name: "Bathroom", id: 2));
     rooms.add(Room(name: "Kitchen", id: 3));
