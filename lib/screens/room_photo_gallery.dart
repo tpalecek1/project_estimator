@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:photo_view/photo_view.dart';
+import 'package:photo_view/photo_view_gallery.dart';
 import 'package:project_estimator/models/room.dart';
 import 'package:transparent_image/transparent_image.dart';
 
+//reference: https://22v.net/article/3246/
 class RoomPhotoGallery extends StatelessWidget {
 
   static const routeName = 'room_photo_gallery';
@@ -60,8 +63,12 @@ class _GalleryScreenState extends State<GalleryScreen> {
                     Container(
                       child: GestureDetector(
                         onTap: () {
-                          //todo
-                          
+                          Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+                            return PhotoBigView(
+                              initialIndex: index,
+                              photoList: room.photos,
+                            );
+                          })); 
                         },
                         child: FadeInImage.memoryNetwork(
                           placeholder: kTransparentImage,
@@ -196,7 +203,67 @@ class HeroHeader implements SliverPersistentHeaderDelegate {
   @override
   // TODO: implement stretchConfiguration  //time: research the function of this
   OverScrollHeaderStretchConfiguration get stretchConfiguration => null;
+}
 
+class PhotoBigView extends StatefulWidget {
+  final int initialIndex;
+  final List<String> photoList;
+  final PageController pageController;
 
+  PhotoBigView({this.initialIndex, this.photoList}) :  //interesting, initializtion list can set final value
+    pageController = PageController(initialPage: initialIndex);
+  
+  @override
+  _PhotoBigViewState createState() => _PhotoBigViewState();
+}
+
+class _PhotoBigViewState extends State<PhotoBigView> {
+  int currentIndex;
+
+  @override
+  void initState() {
+    currentIndex = widget.initialIndex;
+    super.initState();
+  }
+
+  void onPageChanged(int index) {
+    setState(() {
+      currentIndex = index;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Container(
+          child: PhotoViewGallery.builder(
+            scrollPhysics: const BouncingScrollPhysics(),
+            itemCount: widget.photoList.length, 
+            onPageChanged: onPageChanged,
+            pageController: widget.pageController,
+            builder: (context, index){
+              return PhotoViewGalleryPageOptions( //adjust the picture size as it shrink or expand
+                imageProvider: NetworkImage(widget.photoList[index]),
+                minScale: PhotoViewComputedScale.contained * 0.6, //shrink to this min number and no less  (time: study how it operate to get contained)
+                maxScale: PhotoViewComputedScale.covered * 1.1, //expand to this max number and no more
+                initialScale: PhotoViewComputedScale.contained, //initial size
+              );
+            }
+          )
+        ),
+        Positioned(
+          top: 30,
+          left: 0,
+          child: GestureDetector(
+            onTap: () {
+              Navigator.of(context).pop();
+            },
+            child: Container(width: 50, height:50, child: Icon(Icons.arrow_back, color: Colors.white))
+          )
+        )        
+      ]
+    );
+  }
 }
 

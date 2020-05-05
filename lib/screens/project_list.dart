@@ -19,9 +19,13 @@ class _ProjectListState extends State<ProjectList> {
   bool showCancel = false;
   String _selectedStatus = 'all';
   String _searchWord = "";
+
   //fake data
   List<Project> projects = FakeData().getProjects();
+
+  //filtered data
   List<Project> filteredProjects;
+  
   DateFormat formatter;
 
   @override
@@ -95,7 +99,6 @@ class _ProjectListState extends State<ProjectList> {
                     ),
                     child: InkWell(
                       onTap: (){
-                        //todo
                         filter();
                         FocusScope.of(context).requestFocus(FocusNode());
                       },
@@ -122,7 +125,7 @@ class _ProjectListState extends State<ProjectList> {
                     ),
                     child: mypopup.PopupMenuButton<String>(
                       elevation: 20,
-                      tooltip: 'Select a category',
+                      tooltip: 'Select a status',
                       padding: EdgeInsets.all(0),
                       icon: Icon(Icons.filter_list),
                       onSelected: (newValue) {
