@@ -8,7 +8,7 @@ class Room {
 
   Room({
     this.id,
-    this.name = 'Room',
+    this.name = '',
     this.ceilingHeight = 0,
     this.length = 0,
     this.width = 0,

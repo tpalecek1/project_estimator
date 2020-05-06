@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:project_estimator/screens/edit_room.dart';
@@ -7,12 +9,13 @@ import 'package:project_estimator/widgets/new_note_dialog.dart';
 import '../models/project.dart';
 import '../models/room.dart';
 import '../widgets/new_note_dialog.dart';
-import '../models/fake_data.dart';
+import 'package:project_estimator/services/database.dart';
 
 class EditProject extends StatefulWidget{
-  EditProject({Key key, this.project}) : super(key: key);
+  EditProject({Key key, this.userId, this.project}) : super(key: key);
   static const routeName = 'edit_project';
-  Project project;
+  final String userId;
+  final Project project;
 
   @override
   _EditProjectState createState() => _EditProjectState();
@@ -22,49 +25,113 @@ class EditProject extends StatefulWidget{
 
 class _EditProjectState extends State<EditProject> {
   final formKey = GlobalKey<FormState>();
-  Project project;
-  List<Room> rooms = [];
+
+  bool _isProcessing = false;
+  bool _hasInvalidInput = false;
+
+  Project _project;
+  List<Room> _rooms;
+  StreamSubscription<List<Room>> _roomStreamSubscription;
 
   @override 
   void initState() { 
     super.initState();
-    //todo - Get project and rooms(only name and ID needed for rooms) from database if exists, get project's rooms, fill rooms list
-    getData();
-  }
-
-  void getData() async {
-    await Future.delayed(const Duration(seconds: 1)); //Simulating delay from getting data
-    //If project does not exist in database, create new project
-    getFakeData();
-    setState((){});
+    
+    _project = widget.project;
+    if (_project.id != null) {
+      _listenForRooms();
+    }
   }
 
   @override 
   Widget build(BuildContext context){
     return Scaffold(
       resizeToAvoidBottomInset: false, //Changes keyboard to an overlay instead of pushing the screen up
-      appBar: AppBar(title: Text('Edit Project')),
-      body: waitData(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          //todo - Validate and save form data
-          if(formKey.currentState.validate()){
-            formKey.currentState.save();
+      appBar: AppBar(
+        title: _project.id == null ? Text('New Project') : Text('Edit Project'),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () async {
+            if (_project.id == null) {
+              Navigator.of(context).pop();
+            }
+            else {
+              if(formKey.currentState.validate()){
+                formKey.currentState.save();
+                Database().updateProject(_project);
+                Navigator.of(context).pop();
+              }
+              else {
+                setState(() { _hasInvalidInput = true; });
+              }
+            }
           }
-          Navigator.of(context).pop();
-        },
-        child: Icon(Icons.check),
-      )
+        ),
+      ),
+      body: _body(),
+      floatingActionButton: Visibility(
+        visible: _isProcessing || _project.id != null ? false : true,
+        child: FloatingActionButton(
+          onPressed: () async {
+            if(formKey.currentState.validate()){
+              formKey.currentState.save();
+
+              setState(() { _isProcessing = true; _hasInvalidInput = false; });
+              String projectId = await Database().createProject(widget.userId, _project);
+              _project = await Database().readProject(projectId);
+              _listenForRooms();
+              setState(() { _isProcessing = false; });
+
+            }
+            else {
+              setState(() { _hasInvalidInput = true; });
+            }
+          },
+          child: Icon(Icons.check),
+        ),
+      ),
     );
   }
 
-  Widget waitData() {
-    if(project == null){
-      return Center(
-        child: CircularProgressIndicator()
-      );
+  Widget _body() {
+    if (_project.id == null) {
+      return Center(child: _newProjectName());
     }
-    else{
+    else if (_isProcessing) {
+      return Center(child: CircularProgressIndicator());
+    }
+    else {
+      return _projectInfo();
+    }
+  }
+
+  Widget _projectName() {
+    return TextFormField(
+      autovalidate: _hasInvalidInput ? true : false,
+      initialValue: _project.name,
+      textAlign: TextAlign.left,
+      keyboardType: TextInputType.text,
+      decoration: InputDecoration(
+        labelText: 'Project Name',
+        border: OutlineInputBorder(),
+        contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+      ),
+      onSaved: (name) => _project.name = name.trim(),
+      validator: (name) => name.trim().length == 0 ? 'Project name can\'t be empty' : null,
+    );
+  }
+
+  Widget _newProjectName() {
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Form(
+        key: formKey,
+        child: _projectName(),
+      ),
+    );
+  }
+
+  Widget _projectInfo() {
     return Form(
       key: formKey,
       child: Column(
@@ -82,30 +149,13 @@ class _EditProjectState extends State<EditProject> {
                   Container(
                     height: 50,
                     padding: EdgeInsets.all(5),
-                    child: TextFormField(
-                      initialValue: project.name,
-                      textAlign: TextAlign.left,
-                      keyboardType: TextInputType.text,
-                      decoration: InputDecoration(
-                        labelText: 'Project Name',
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-                      ),
-                      onSaved: (value){
-                        //todo
-                        print("Customer Name: \n");
-                      },
-                      validator: (value){
-                        //todo
-                        print("Validating Customer Name\n");
-                      }
-                    ),
+                    child: _projectName(),
                   ),
                   Container(
                     height: 50,
                     padding: EdgeInsets.all(5),
                     child: TextFormField(
-                      initialValue: project.clientName,
+                      initialValue: _project.clientName,
                       textAlign: TextAlign.left,
                       keyboardType: TextInputType.text,
                       decoration: InputDecoration(
@@ -113,21 +163,16 @@ class _EditProjectState extends State<EditProject> {
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                       ),
-                      onSaved: (value){
-                        //todo
-                        print("Customer Name: \n");
-                      },
-                      validator: (value){
-                        //todo
-                        print("Validating Customer Name\n");
-                      }
+                      onSaved: (clientName) => _project.clientName = clientName.trim(),
+                      validator: (clientName) => null,
                     ),
                   ),
                   Container(
                     height: 50,
                     padding: EdgeInsets.all(5),
                     child: TextFormField(
-                      initialValue: project.clientAddress,
+                      autovalidate: _hasInvalidInput ? true : false,
+                      initialValue: _project.clientAddress,
                       textAlign: TextAlign.left,
                       keyboardType: TextInputType.text,
                       decoration: InputDecoration(
@@ -135,21 +180,16 @@ class _EditProjectState extends State<EditProject> {
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                       ),
-                      onSaved: (value){
-                        //todo
-                        print("Address: \n");
-                      },
-                      validator: (value){
-                        //todo
-                        print("Validating Address\n");
-                      }
+                      onSaved: (address) => _project.clientAddress = address.trim(),
+                      validator: (address) => null,
                     ),
                   ),
                   Container(
                     height: 50,
                     padding: EdgeInsets.all(5),
                     child: TextFormField(
-                      initialValue: project.description,
+                      autovalidate: _hasInvalidInput ? true : false,
+                      initialValue: _project.description,
                       textAlign: TextAlign.left,
                       keyboardType: TextInputType.text,
                       decoration: InputDecoration(
@@ -157,14 +197,8 @@ class _EditProjectState extends State<EditProject> {
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                       ),
-                      onSaved: (value){
-                        //todo
-                        print("Description: \n");
-                      },
-                      validator: (value){
-                        //todo
-                        print("Validating Description\n");
-                      }
+                      onSaved: (description) => _project.description = description.trim(),
+                      validator: (description) => null,
                     ),
                   ),
                 ],)
@@ -210,8 +244,7 @@ class _EditProjectState extends State<EditProject> {
               child: Center(
                 child: CustomButton1(
                   onPressed: () {
-                    //todo: add a room
-                    Navigator.of(context).push(MaterialPageRoute(builder: (context) => EditRoom(room: Room())));
+                    Navigator.of(context).push(MaterialPageRoute(builder: (context) => EditRoom(projectId: _project.id, room: Room())));
                   },
                   child: Text('Add Room'),
                 )
@@ -231,18 +264,20 @@ class _EditProjectState extends State<EditProject> {
             ),
             Flexible(
               flex: 4,
-              child: ListView.builder(
-                itemCount: rooms.length,
+              child: _rooms == null ?
+              Center(child: CircularProgressIndicator()) :
+              ListView.builder(
+                itemCount: _rooms.length,
                 itemBuilder: (context, index){
                 return Container(
                   margin: EdgeInsets.all(1),
                   decoration: BoxDecoration(border: Border.all(), borderRadius: BorderRadius.circular(10)),
                   child: ListTile(
-                    title: Text(rooms[index].name),
+                    title: Text(_rooms[index].name),
                     trailing: Icon(Icons.edit),
                     onTap: () => {
-                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => EditRoom(room: rooms[index])))
-                    }, //todo - go to edit room page for clicked room
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => EditRoom(room: _rooms[index])))
+                    },
                   )
                 );
               }),
@@ -250,18 +285,18 @@ class _EditProjectState extends State<EditProject> {
           ]
         )
     );
-    }
+  }
+  
+  void _listenForRooms() {
+    _roomStreamSubscription = Database().readRoomsRealTime(_project.id).listen((rooms) {
+      rooms.sort((a, b) => (a.name).compareTo(b.name));
+      setState(() { _rooms = rooms; });
+    });
   }
 
-  void getFakeData() {
-    project = widget.project;
-    if(project.id != null){
-      rooms = FakeData().getRooms(project.id);
-    }
-    /* rooms.add(Room(name: "Bedroom", id: 1));
-    rooms.add(Room(name: "Bathroom", id: 2));
-    rooms.add(Room(name: "Kitchen", id: 3));
-    Project fakeProject = Project(id: 1, name: "Test Project", clientName: "Sherlock", clientAddress: "221B Baker St.", description: "Painting Exterior");
-    project = fakeProject; */
+  @override
+  void dispose() {
+    _roomStreamSubscription?.cancel();
+    super.dispose();
   }
 }
