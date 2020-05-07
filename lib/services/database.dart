@@ -38,6 +38,7 @@ abstract class DatabaseInterface {
   // projects
   Future<String> createProject(String userId, Project project);
   Future<Project> readProject(String projectId);
+  Stream<Project> readProjectRealTime(String projectId);
   Future<List<Project>> readProjects(String userId);
   Stream<List<Project>> readProjectsRealTime(String userId);
   Future<void> updateProject(Project project);
@@ -160,6 +161,31 @@ class Database implements DatabaseInterface {
     }
 
     return doc.exists ? Project.fromMap(doc.data, doc.reference.path) : null;
+  }
+
+  Stream<Project> readProjectRealTime(String projectId) {
+    StreamController<Project> projectStreamCtl;
+    StreamSubscription projectStreamSub;
+
+    void listenForProject() {
+      projectStreamSub = _db.document(projectId).snapshots().listen((snapshot) {
+        if (snapshot.exists) {
+          projectStreamCtl.add(Project.fromMap(snapshot.data, snapshot.reference.path));
+        }
+      });
+    }
+
+    void stopListeningForProject() {
+      projectStreamSub.cancel();
+      projectStreamCtl.close();
+    }
+
+    projectStreamCtl = StreamController<Project>.broadcast(
+        onListen: listenForProject,
+        onCancel: stopListeningForProject
+    );
+
+    return projectStreamCtl.stream;
   }
 
   Future<List<Project>> readProjects(String userId) async {

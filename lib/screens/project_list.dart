@@ -83,6 +83,7 @@ class _ProjectListState extends State<ProjectList> {
                             controller.clear();
                             _searchWord = "";
                             showCancel = false;
+                            filteredProjects = _projects;
                             setState((){});
                         })
                       ),

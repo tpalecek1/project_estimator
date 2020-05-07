@@ -28,6 +28,7 @@ class _EditProjectState extends State<EditProject> {
 
   bool _isProcessing = false;
   bool _hasInvalidInput = false;
+  bool _roomsAreModified = false;
 
   Project _project;
   List<Room> _rooms;
@@ -48,39 +49,39 @@ class _EditProjectState extends State<EditProject> {
     return Scaffold(
       resizeToAvoidBottomInset: false, //Changes keyboard to an overlay instead of pushing the screen up
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: _project.id == null ? Text('New Project') : Text('Edit Project'),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () async {
-            if (_project.id == null) {
-              Navigator.of(context).pop();
-            }
-            else {
-              if(formKey.currentState.validate()){
-                formKey.currentState.save();
-                Database().updateProject(_project);
+        actions: <Widget>[
+          Visibility(
+            visible: _roomsAreModified ? false : true,
+            child: FlatButton(
+              child: Text('Cancel', style: TextStyle(fontSize: 17.0, color: Colors.white)),
+              onPressed: () {
                 Navigator.of(context).pop();
-              }
-              else {
-                setState(() { _hasInvalidInput = true; });
-              }
-            }
-          }
-        ),
+              },
+            ),
+          ),
+        ],
       ),
       body: _body(),
       floatingActionButton: Visibility(
-        visible: _isProcessing || _project.id != null ? false : true,
+        visible: _isProcessing ? false : true,
         child: FloatingActionButton(
           onPressed: () async {
             if(formKey.currentState.validate()){
               formKey.currentState.save();
 
-              setState(() { _isProcessing = true; _hasInvalidInput = false; });
-              String projectId = await Database().createProject(widget.userId, _project);
-              _project = await Database().readProject(projectId);
-              _listenForRooms();
-              setState(() { _isProcessing = false; });
+              if (_project.id == null) {
+                setState(() { _isProcessing = true; _hasInvalidInput = false; });
+                String projectId = await Database().createProject(widget.userId, _project);
+                _project = await Database().readProject(projectId);
+                _listenForRooms();
+                setState(() { _isProcessing = false; });
+              }
+              else {
+                  Database().updateProject(_project);
+                  Navigator.of(context).pop();
+              }
 
             }
             else {
@@ -244,7 +245,10 @@ class _EditProjectState extends State<EditProject> {
               child: Center(
                 child: CustomButton1(
                   onPressed: () {
-                    Navigator.of(context).push(MaterialPageRoute(builder: (context) => EditRoom(projectId: _project.id, room: Room())));
+                    Navigator.of(context).push(MaterialPageRoute(builder: (context) => EditRoom(projectId: _project.id, room: Room())))
+                    .then((roomIsModified) {
+                      setState(() { _roomsAreModified = roomIsModified; });
+                    });
                   },
                   child: Text('Add Room'),
                 )
@@ -277,6 +281,9 @@ class _EditProjectState extends State<EditProject> {
                     trailing: Icon(Icons.edit),
                     onTap: () => {
                       Navigator.of(context).push(MaterialPageRoute(builder: (context) => EditRoom(room: _rooms[index])))
+                        .then((roomIsModified) {
+                          setState(() { _roomsAreModified = roomIsModified; });
+                        })
                     },
                   )
                 );

@@ -26,6 +26,7 @@ class _EditRoomState extends State<EditRoom> {
 
   bool _isProcessing = false;
   bool _hasInvalidInput = false;
+  bool _roomIsModified = false;
 
   Room _room;
   List<RoomNote> _notes;
@@ -46,39 +47,41 @@ class _EditRoomState extends State<EditRoom> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: _room.id == null ? Text('New Room') : Text('Edit Room'),
-        leading: IconButton(
-            icon: Icon(Icons.arrow_back),
-            onPressed: () async {
-              if (_room.id == null) {
-                Navigator.of(context).pop();
-              }
-              else {
-                if(formKey.currentState.validate()){
-                  formKey.currentState.save();
-                  Database().updateRoom(_room);
-                  Navigator.of(context).pop();
-                }
-                else {
-                  setState(() { _hasInvalidInput = true; });
-                }
-              }
-            }
-        ),
+        actions: <Widget>[
+          Visibility(
+            visible: _roomIsModified ? false : true,
+            child: FlatButton(
+              child: Text('Cancel', style: TextStyle(fontSize: 17.0, color: Colors.white)),
+              onPressed: () {
+                Navigator.of(context).pop(_roomIsModified);
+              },
+            ),
+          ),
+        ],
       ),
       body: _body(context),
       floatingActionButton: Visibility(
-        visible: _isProcessing || _room.id != null ? false : true,
+        visible: _isProcessing ? false : true,
         child: FloatingActionButton(
           onPressed: () async {
             if(formKey.currentState.validate()){
               formKey.currentState.save();
 
-              setState(() { _isProcessing = true; _hasInvalidInput = false; });
-              String roomId = await Database().createRoom(widget.projectId, _room);
-              _room = await Database().readRoom(roomId);
-              _listenForRoomNotes();
-              setState(() { _isProcessing = false; });
+              if (_room.id == null) {
+                setState(() { _isProcessing = true; _hasInvalidInput = false; });
+                String roomId = await Database().createRoom(widget.projectId, _room);
+                _room = await Database().readRoom(roomId);
+                _listenForRoomNotes();
+                setState(() { _isProcessing = false; _roomIsModified = true; });
+              }
+              else {
+                Database().updateRoom(_room);
+                _roomIsModified = true;
+                Navigator.of(context).pop(_roomIsModified);
+              }
+
             }
             else {
               setState(() { _hasInvalidInput = true; });
@@ -270,6 +273,7 @@ class _EditRoomState extends State<EditRoom> {
                               onCancel: (){Navigator.of(context).pop();},
                               onSubmit: (hasCost, note) {
                                 Database().createRoomNote(_room.id, RoomNote(hasCost: hasCost, description: note));
+                                setState(() { _roomIsModified = true; });
                                 Navigator.of(context).pop();
                               },
                             );
@@ -297,6 +301,7 @@ class _EditRoomState extends State<EditRoom> {
                       child: Icon(Icons.delete),
                       onPressed: (){
                         Database().deleteRoomNote(_notes[index].id);
+                        setState(() { _roomIsModified = true; });
                       },
                     ),
                   )
