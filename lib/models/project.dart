@@ -1,9 +1,12 @@
 import 'package:intl/intl.dart';
+import 'estimate.dart';
+
 
 class Project {
   final String id;
   String name, status, description, clientName, clientAddress, clientPhoneNumber;
   DateTime date;
+  Estimate estimate;
 
   Project({
     this.id,
@@ -13,8 +16,10 @@ class Project {
     this.clientName = "",
     this.clientAddress = "",
     this.clientPhoneNumber = "",
-    DateTime date }) {
+    DateTime date,
+    Estimate estimate }) {
     this.date = date ?? DateTime.now();
+    this.estimate = estimate;
   }
 
   Project.fromMap(Map<String, dynamic> map, String projectId) :
@@ -25,7 +30,8 @@ class Project {
     clientName = map['clientName'],
     clientAddress = map['clientAddress'],
     clientPhoneNumber = map['clientPhoneNumber'],
-    date = DateTime.parse(map['date']);
+    date = DateTime.parse(map['date']),
+    estimate = Estimate.fromString(map['estimate']);
 
   Map<String, dynamic> toMap() {
     return {
@@ -36,6 +42,7 @@ class Project {
       'clientAddress': clientAddress,
       'clientPhoneNumber': clientPhoneNumber,
       'date': dateString(),
+      'estimate': estimate.itemsToString()
     };
   }
 
@@ -55,10 +62,11 @@ class Project {
       other.clientName == clientName &&
       other.clientAddress == clientAddress &&
       other.clientPhoneNumber == clientPhoneNumber &&
-      other.dateString() == dateString();
+      other.dateString() == dateString() &&
+      other.estimate.itemsToString() == estimate.itemsToString();
 
   @override
   int get hashCode => /*id.hashCode^*/name.hashCode^status.hashCode^description.hashCode^
                       clientName.hashCode^clientAddress.hashCode^clientPhoneNumber.hashCode^
-                      dateString().hashCode;
+                      dateString().hashCode^estimate.itemsToString().hashCode;
 }

@@ -3,14 +3,17 @@ import 'room.dart';
 import 'user.dart';
 import 'project_note.dart';
 import 'room_note.dart';
+import 'paint_settings.dart';
 
 class FakeData{
+  User user;
   List<Project> projects = [];
   List<Room> rooms = [];
   List<ProjectNote> projectNotes = [];
   List<RoomNote> roomNotes = [];
 
   FakeData(){
+    user = User(id: "1", company: "Painting Company", address: "1st Street", phoneNumber: "555-1234", licenseNumber: "1234", paintSettings: PaintSettings());
     projects.add(Project(
       id: '0',
       name: 'Project 1',
@@ -50,7 +53,7 @@ class FakeData{
     rooms.add(Room(id: '3', name: 'Bathroom', ceilingHeight: 8, length: 10, width: 9, doorCount: 1, windowCount: 3, accentWallCount: 0));
     rooms.add(Room(id: '4', name: 'Living Room', ceilingHeight: 10, length: 12, width: 12, doorCount: 1, windowCount: 2, accentWallCount: 1, hasChairRail: true));
     rooms.add(Room(id: '5', name: 'Garage', ceilingHeight: 10, length: 12, width: 12, doorCount: 1, windowCount: 2, accentWallCount: 1, hasChairRail: true));
-    projectNotes.add(ProjectNote(description: 'Bright Colors!', hasCost: true));
+    projectNotes.add(ProjectNote(description: 'Bright Colors!', hasCost: false));
     projectNotes.add(ProjectNote(description: 'New drywall', hasCost: true));
     projectNotes.add(ProjectNote(description: 'No carpets', hasCost: false));
     projectNotes.add(ProjectNote(description: 'New drywall', hasCost: true));
@@ -58,9 +61,9 @@ class FakeData{
     projectNotes.add(ProjectNote(description: 'Many items on walls', hasCost: true));
     roomNotes.add(RoomNote(id: '0', description: "Vaulted Ceiling", hasCost: true));
     roomNotes.add(RoomNote(id: '1', description: "Dark Colors", hasCost: true));
-    roomNotes.add(RoomNote(id: '2', description: "Nail Holes", hasCost: true));
+    roomNotes.add(RoomNote(id: '2', description: "Nail Holes", hasCost: false));
     roomNotes.add(RoomNote(id: '3', description: "Floor-to-ceiling windows", hasCost: false));
-    roomNotes.add(RoomNote(id: '4', description: "painted can lights", hasCost: true));
+    roomNotes.add(RoomNote(id: '4', description: "painted can lights", hasCost: false));
   }
 
   List<Project> getProjects() => projects;

@@ -165,7 +165,7 @@ class _ProjectDetailState extends State<ProjectDetail> {
                 Expanded(
                   child: CustomButton1(
                     onPressed: () {
-                      Navigator.of(context).pushNamed(ProjectEstimate.routeName);
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => ProjectEstimate(project: project, rooms: rooms)));
                     },
                     child: Text('Show Project Estimate')
                   )
