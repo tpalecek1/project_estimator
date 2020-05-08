@@ -7,6 +7,7 @@ import 'package:project_estimator/screens/project_notes.dart';
 import 'package:project_estimator/widgets/custom_button_1.dart';
 import 'package:project_estimator/widgets/new_note_dialog.dart';
 import '../models/project.dart';
+import '../models/project_note.dart';
 import '../models/room.dart';
 import '../widgets/new_note_dialog.dart';
 import 'package:project_estimator/services/database.dart';
@@ -46,49 +47,52 @@ class _EditProjectState extends State<EditProject> {
 
   @override 
   Widget build(BuildContext context){
-    return Scaffold(
-      resizeToAvoidBottomInset: false, //Changes keyboard to an overlay instead of pushing the screen up
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: _project.id == null ? Text('New Project') : Text('Edit Project'),
-        actions: <Widget>[
-          Visibility(
-            visible: _roomsAreModified ? false : true,
-            child: FlatButton(
-              child: Text('Cancel', style: TextStyle(fontSize: 17.0, color: Colors.white)),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+    return WillPopScope(
+      onWillPop: () async => false,                 // disable Android system "back" button
+      child: Scaffold(
+        resizeToAvoidBottomInset: false, //Changes keyboard to an overlay instead of pushing the screen up
+        appBar: AppBar(
+          automaticallyImplyLeading: false,         // remove Flutter automatic "back" button from AppBar
+          title: _project.id == null ? Text('New Project') : Text('Edit Project'),
+          actions: <Widget>[
+            Visibility(
+              visible: _roomsAreModified ? false : true,
+              child: FlatButton(
+                child: Text('Cancel', style: TextStyle(fontSize: 17.0, color: Colors.white)),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
             ),
-          ),
-        ],
-      ),
-      body: _body(),
-      floatingActionButton: Visibility(
-        visible: _isProcessing ? false : true,
-        child: FloatingActionButton(
-          onPressed: () async {
-            if(formKey.currentState.validate()){
-              formKey.currentState.save();
+          ],
+        ),
+        body: _body(),
+        floatingActionButton: Visibility(
+          visible: _isProcessing ? false : true,
+          child: FloatingActionButton(
+            onPressed: () async {
+              if(formKey.currentState.validate()){
+                formKey.currentState.save();
 
-              if (_project.id == null) {
-                setState(() { _isProcessing = true; _hasInvalidInput = false; });
-                String projectId = await Database().createProject(widget.userId, _project);
-                _project = await Database().readProject(projectId);
-                _listenForRooms();
-                setState(() { _isProcessing = false; });
-              }
-              else {
+                if (_project.id == null) {
+                  setState(() { _isProcessing = true; _hasInvalidInput = false; });
+                  String projectId = await Database().createProject(widget.userId, _project);
+                  _project = await Database().readProject(projectId);
+                  _listenForRooms();
+                  setState(() { _isProcessing = false; });
+                }
+                else {
                   Database().updateProject(_project);
                   Navigator.of(context).pop();
-              }
+                }
 
-            }
-            else {
-              setState(() { _hasInvalidInput = true; });
-            }
-          },
-          child: Icon(Icons.check),
+              }
+              else {
+                setState(() { _hasInvalidInput = true; });
+              }
+            },
+            child: Icon(Icons.check),
+          ),
         ),
       ),
     );
@@ -227,8 +231,10 @@ class _EditProjectState extends State<EditProject> {
                               title: "New Project Note", 
                               hint: "Enter project note",
                               onCancel: (){Navigator.of(context).pop();},
-                              //todo - add note to database
-                              onSubmit: (hasCost, note){Navigator.of(context).pop(); print(hasCost); print(note);},
+                              onSubmit: (hasCost, note) {
+                                Database().createProjectNote(_project.id, ProjectNote(hasCost: hasCost, description: note));
+                                Navigator.of(context).pop();
+                              },
                             );
                           }
                         );
