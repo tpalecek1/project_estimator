@@ -132,7 +132,7 @@ class _BodyState extends State<Body> {
                 await _auth.signUp(_email, _password) ;
 
               Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (ctx) => ProjectList(/*userId: user*/))
+                  MaterialPageRoute(builder: (ctx) => ProjectList(userId: user))
               );
             }
             catch (errorMsg) {

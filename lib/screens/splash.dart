@@ -29,7 +29,7 @@ class _SplashScreenState extends State<SplashScreen> {
       if (user != null) {
         Navigator.of(context).pushReplacement(
             MaterialPageRoute(
-                builder: (ctx) => ProjectList(/*userId: user*/))
+                builder: (ctx) => ProjectList(userId: user))
         );
       }
       else {
