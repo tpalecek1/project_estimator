@@ -36,15 +36,16 @@ abstract class DatabaseInterface {
   Future<void> deleteUser(String userId);
 
   // projects
-  Future<void> createProject(String userId, Project project);
+  Future<String> createProject(String userId, Project project);
   Future<Project> readProject(String projectId);
+  Stream<Project> readProjectRealTime(String projectId);
   Future<List<Project>> readProjects(String userId);
   Stream<List<Project>> readProjectsRealTime(String userId);
   Future<void> updateProject(Project project);
   Future<void> deleteProject(String projectId);
 
   // projectNotes
-  Future<void> createProjectNote(String projectId, ProjectNote note);
+  Future<String> createProjectNote(String projectId, ProjectNote note);
   Future<ProjectNote> readProjectNote(String projectNoteId);
   Future<List<ProjectNote>> readProjectNotes(String projectId);
   Stream<List<ProjectNote>> readProjectNotesRealTime(String projectId);
@@ -53,7 +54,7 @@ abstract class DatabaseInterface {
   Future<void> deleteProjectNote(String projectNoteId);
 
   // rooms
-  Future<void> createRoom(String projectId, Room room);
+  Future<String> createRoom(String projectId, Room room);
   Future<Room> readRoom(String roomId);
   Future<List<Room>> readRooms(String projectId);
   Stream<List<Room>> readRoomsRealTime(String projectId);
@@ -61,7 +62,7 @@ abstract class DatabaseInterface {
   Future<void> deleteRoom(String roomId);
 
   // roomNotes
-  Future<void> createRoomNote(String roomId, RoomNote note);
+  Future<String> createRoomNote(String roomId, RoomNote note);
   Future<RoomNote> readRoomNote(String roomNoteId);
   Future<List<RoomNote>> readRoomNotes(String roomId);
   Stream<List<RoomNote>> readRoomNotesRealTime(String roomId);
@@ -70,7 +71,7 @@ abstract class DatabaseInterface {
   Future<void> deleteRoomNote(String roomNoteId);
 
   // estimates
-  Future<void> createEstimate(String projectId, Estimate estimate);
+  Future<String> createEstimate(String projectId, Estimate estimate);
   Future<Estimate> readEstimate(String estimateId);
   Future<List<Estimate>> readEstimates(String projectId);
   Stream<List<Estimate>> readEstimatesRealTime(String projectId);
@@ -136,13 +137,17 @@ class Database implements DatabaseInterface {
 
 
   // projects  (userId = auth uid, projectId and project.id = project doc path)
-  Future<void> createProject(String userId, Project project) async {
+  Future<String> createProject(String userId, Project project) async {
+    DocumentReference doc;
+
     try {
-      await _db.collection(users).document(userId).collection(projects).document().setData(project.toMap());
+      doc = await _db.collection(users).document(userId).collection(projects).add(project.toMap());
     }
     catch (error) {
       rethrow;
     }
+
+    return doc.path;
   }
 
   Future<Project> readProject(String projectId) async {
@@ -156,6 +161,31 @@ class Database implements DatabaseInterface {
     }
 
     return doc.exists ? Project.fromMap(doc.data, doc.reference.path) : null;
+  }
+
+  Stream<Project> readProjectRealTime(String projectId) {
+    StreamController<Project> projectStreamCtl;
+    StreamSubscription projectStreamSub;
+
+    void listenForProject() {
+      projectStreamSub = _db.document(projectId).snapshots().listen((snapshot) {
+        if (snapshot.exists) {
+          projectStreamCtl.add(Project.fromMap(snapshot.data, snapshot.reference.path));
+        }
+      });
+    }
+
+    void stopListeningForProject() {
+      projectStreamSub.cancel();
+      projectStreamCtl.close();
+    }
+
+    projectStreamCtl = StreamController<Project>.broadcast(
+        onListen: listenForProject,
+        onCancel: stopListeningForProject
+    );
+
+    return projectStreamCtl.stream;
   }
 
   Future<List<Project>> readProjects(String userId) async {
@@ -180,6 +210,9 @@ class Database implements DatabaseInterface {
         if (snapshot.documents.isNotEmpty) {
           List<Project> docs = snapshot.documents.map((doc) => Project.fromMap(doc.data, doc.reference.path)).toList();
           projectStreamCtl.add(docs);
+        }
+        else {
+          projectStreamCtl.add(List<Project>());
         }
       });
     }
@@ -219,13 +252,17 @@ class Database implements DatabaseInterface {
 
 
   // projectNotes  (projectId = project doc path, projectNoteId and note.id = projectNote doc path)
-  Future<void> createProjectNote(String projectId, ProjectNote note) async {
+  Future<String> createProjectNote(String projectId, ProjectNote note) async {
+    DocumentReference doc;
+
     try {
-      await _db.document(projectId).collection(projectNotes).document().setData(note.toMap());
+      doc = await _db.document(projectId).collection(projectNotes).add(note.toMap());
     }
     catch (error) {
       rethrow;
     }
+
+    return doc.path;
   }
 
   Future<ProjectNote> readProjectNote(String projectNoteId) async {
@@ -263,6 +300,9 @@ class Database implements DatabaseInterface {
         if (snapshot.documents.isNotEmpty) {
           List<ProjectNote> docs = snapshot.documents.map((doc) => ProjectNote.fromMap(doc.data, doc.reference.path)).toList();
           projectNoteStreamCtl.add(docs);
+        }
+        else {
+          projectNoteStreamCtl.add(List<ProjectNote>());
         }
       });
     }
@@ -314,13 +354,17 @@ class Database implements DatabaseInterface {
 
 
   // rooms  (projectId = project doc path, roomId and room.id = room doc path)
-  Future<void> createRoom(String projectId, Room room) async {
+  Future<String> createRoom(String projectId, Room room) async {
+    DocumentReference doc;
+
     try {
-      await _db.document(projectId).collection(rooms).document().setData(room.toMap());
+      doc = await _db.document(projectId).collection(rooms).add(room.toMap());
     }
     catch (error) {
       rethrow;
     }
+
+    return doc.path;
   }
 
   Future<Room> readRoom(String roomId) async {
@@ -358,6 +402,9 @@ class Database implements DatabaseInterface {
         if (snapshot.documents.isNotEmpty) {
           List<Room> docs = snapshot.documents.map((doc) => Room.fromMap(doc.data, doc.reference.path)).toList();
           roomStreamCtl.add(docs);
+        }
+        else {
+          roomStreamCtl.add(List<Room>());
         }
       });
     }
@@ -397,13 +444,17 @@ class Database implements DatabaseInterface {
 
 
   // roomNotes  (roomId = room doc path, roomNoteId and note.id = roomNote doc path)
-  Future<void> createRoomNote(String roomId, RoomNote note) async {
+  Future<String> createRoomNote(String roomId, RoomNote note) async {
+    DocumentReference doc;
+
     try {
-      await _db.document(roomId).collection(roomNotes).document().setData(note.toMap());
+      doc = await _db.document(roomId).collection(roomNotes).add(note.toMap());
     }
     catch (error) {
       rethrow;
     }
+
+    return doc.path;
   }
 
   Future<RoomNote> readRoomNote(String roomNoteId) async {
@@ -441,6 +492,9 @@ class Database implements DatabaseInterface {
         if (snapshot.documents.isNotEmpty) {
           List<RoomNote> docs = snapshot.documents.map((doc) => RoomNote.fromMap(doc.data, doc.reference.path)).toList();
           roomNoteStreamCtl.add(docs);
+        }
+        else {
+          roomNoteStreamCtl.add(List<RoomNote>());
         }
       });
     }
@@ -492,13 +546,17 @@ class Database implements DatabaseInterface {
 
 
   // estimates  (projectId = project doc path, estimateId and estimate.id = estimate doc path)
-  Future<void> createEstimate(String projectId, Estimate estimate) async {
+  Future<String> createEstimate(String projectId, Estimate estimate) async {
+    DocumentReference doc;
+
     try {
-      await _db.document(projectId).collection(estimates).document().setData(estimate.toMap());
+      doc = await _db.document(projectId).collection(estimates).add(estimate.toMap());
     }
     catch (error) {
       rethrow;
     }
+
+    return doc.path;
   }
 
   Future<Estimate> readEstimate(String estimateId) async {
@@ -536,6 +594,9 @@ class Database implements DatabaseInterface {
         if (snapshot.documents.isNotEmpty) {
           List<Estimate> docs = snapshot.documents.map((doc) => Estimate.fromMap(doc.data, doc.reference.path)).toList();
           estimateStreamCtl.add(docs);
+        }
+        else {
+          estimateStreamCtl.add(List<Estimate>());
         }
       });
     }
