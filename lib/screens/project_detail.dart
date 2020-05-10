@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:project_estimator/screens/edit_project.dart';
 import 'package:project_estimator/screens/project_estimate.dart';
@@ -6,7 +7,7 @@ import 'package:project_estimator/screens/room_detail.dart';
 import 'package:project_estimator/widgets/custom_button_1.dart';
 import '../models/project.dart';
 import '../models/room.dart';
-import '../models/fake_data.dart';
+import 'package:project_estimator/services/database.dart';
 
 class ProjectDetail extends StatefulWidget{
   ProjectDetail({Key key, this.project}) : super(key: key);
@@ -19,127 +20,113 @@ class ProjectDetail extends StatefulWidget{
 
 class _ProjectDetailState extends State<ProjectDetail> {
 
-  Project project;
-  List<Room> rooms = [];
+  Project _project;
+  List<Room> _rooms;
+  StreamSubscription<Project> _projectStreamSubscription;
+  StreamSubscription<List<Room>> _roomStreamSubscription;
 
   @override 
   void initState() { 
     super.initState();
-    //todo - Get project and rooms(only name and ID needed for rooms) from database if exists, get project's rooms, fill rooms list
-    getData();
-  }
 
-  void getData() async {
-    await Future.delayed(const Duration(seconds: 1)); //Simulating delay from getting data
-    //If project does not exist in database, create new project
-    getFakeData();
-    setState((){});
+    _project = widget.project;
+    _listenForProject();
+    _listenForProjectRooms();
   }
-  
 
   @override
   Widget build(BuildContext context) {
-    return waitData();
-  }
-
-  Widget waitData(){
-    if(project == null){
-      return Center(
-        child: CircularProgressIndicator()
-      );
-    }
-    else{
-      return Scaffold(
+    return Scaffold(
       appBar: AppBar(
-        title: Text(project.name),
+        title: Text(_project.name),
       ),
       body: Column(
-        children: [
-          Text(
-            'Project Description',
-            style: Theme.of(context).textTheme.display1,
-            textAlign: TextAlign.left,
-          ),
-          Flexible(
-            flex: 3,
-            child: Container(
-              margin: EdgeInsets.all(3),
-              decoration: BoxDecoration(border: Border.all(width: 1.2), borderRadius: BorderRadius.circular(10)),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  ListTile(
-                    dense: true,
-                    title: Row(
-                      children:[
-                        Text(
-                          'Customer Name:', 
-                          style: TextStyle(
-                            fontSize: 20, 
-                            fontWeight: FontWeight.w400,
-                            decoration: TextDecoration.underline,
-                          )
+          children: [
+            Text(
+              'Project Description',
+              style: Theme.of(context).textTheme.display1,
+              textAlign: TextAlign.left,
+            ),
+            Flexible(
+                flex: 3,
+                child: Container(
+                    margin: EdgeInsets.all(3),
+                    decoration: BoxDecoration(border: Border.all(width: 1.2), borderRadius: BorderRadius.circular(10)),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        ListTile(
+                          dense: true,
+                          title: Row(
+                              children:[
+                                Text(
+                                    'Customer Name:',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w400,
+                                      decoration: TextDecoration.underline,
+                                    )
+                                ),
+                                Padding(padding: EdgeInsets.symmetric(horizontal: 3)),
+                                Text(
+                                    _project.clientName,
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w400,
+                                    )
+                                ),
+                              ]
+                          ),
                         ),
-                        Padding(padding: EdgeInsets.symmetric(horizontal: 3)),
-                        Text(
-                          project.clientName, 
-                          style: TextStyle(
-                            fontSize: 20, 
-                            fontWeight: FontWeight.w400,
-                          )
+                        ListTile(
+                          dense: true,
+                          title: Row(
+                              children:[
+                                Text(
+                                    'Address:',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w400,
+                                      decoration: TextDecoration.underline,
+                                    )
+                                ),
+                                Padding(padding: EdgeInsets.symmetric(horizontal: 3)),
+                                Text(
+                                    _project.clientAddress,
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w400,
+                                    )
+                                ),
+                              ]
+                          ),
                         ),
-                      ]
-                      ),
-                  ),
-                  ListTile(
-                    dense: true,
-                    title: Row(
-                      children:[
-                        Text(
-                          'Address:', 
-                          style: TextStyle(
-                            fontSize: 20, 
-                            fontWeight: FontWeight.w400,
-                            decoration: TextDecoration.underline,
-                          )
+                        ListTile(
+                          dense: true,
+                          title: Row(
+                              children:[
+                                Text(
+                                    'Description:',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w400,
+                                      decoration: TextDecoration.underline,
+                                    )
+                                ),
+                                Padding(padding: EdgeInsets.symmetric(horizontal: 3)),
+                                Text(
+                                    _project.description,
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w400,
+                                    )
+                                ),
+                              ]
+                          ),
                         ),
-                        Padding(padding: EdgeInsets.symmetric(horizontal: 3)),
-                        Text(
-                          project.clientAddress, 
-                          style: TextStyle(
-                            fontSize: 20, 
-                            fontWeight: FontWeight.w400,
-                          )
-                        ),
-                      ]
-                      ),
-                  ),
-                  ListTile(
-                    dense: true,
-                    title: Row(
-                      children:[
-                        Text(
-                          'Description:', 
-                          style: TextStyle(
-                            fontSize: 20, 
-                            fontWeight: FontWeight.w400,
-                            decoration: TextDecoration.underline,
-                          )
-                        ),
-                        Padding(padding: EdgeInsets.symmetric(horizontal: 3)),
-                        Text(
-                          project.description, 
-                          style: TextStyle(
-                            fontSize: 20, 
-                            fontWeight: FontWeight.w400,
-                          )
-                        ),
-                      ]
-                      ),
-                  ),
-                ],
-              )
-            )
+                      ],
+                    )
+                )
           ),
           Flexible(
             flex: 1,
@@ -149,7 +136,7 @@ class _ProjectDetailState extends State<ProjectDetail> {
                 Expanded(
                   child: CustomButton1(
                     onPressed: () {
-                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => EditProject(project: project)));
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => EditProject(project: _project)));
                     },
                     child: Text('Edit Project')
                   )
@@ -165,7 +152,7 @@ class _ProjectDetailState extends State<ProjectDetail> {
                 Expanded(
                   child: CustomButton1(
                     onPressed: () {
-                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => ProjectEstimate(project: project, rooms: rooms)));
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => ProjectEstimate(project: _project, rooms: _rooms)));
                     },
                     child: Text('Show Project Estimate')
                   )
@@ -173,46 +160,63 @@ class _ProjectDetailState extends State<ProjectDetail> {
               ],
             ),
           ),
-          Flexible(
-            flex: 1,
-            fit: FlexFit.tight,
-            child: Container(
-              margin: EdgeInsets.only(left: 3),
-              child: Align(
-                child: Text(
-                  'Rooms',
-                  style: Theme.of(context).textTheme.display1
-                ), 
-                alignment: Alignment.centerLeft
-              )
-            )
-          ),
-          //todo: should be in the list, make fake listview data
-          Flexible(
-            flex: 3,
-            child: ListView.builder(
-              itemCount: rooms.length,
-              itemBuilder: (context, index) {
-                return Card(
-                  child: ListTile(
-                    title: Text('${rooms[index].name}'),
-                    onTap: () {
-                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => RoomDetail(room: rooms[index])));
-                    },
-                  ),
-                );
-              }
+            Flexible(
+                flex: 1,
+                fit: FlexFit.tight,
+                child: Container(
+                    margin: EdgeInsets.only(left: 3),
+                    child: Align(
+                        child: Text(
+                            'Rooms',
+                            style: Theme.of(context).textTheme.display1
+                        ),
+                        alignment: Alignment.centerLeft
+                    )
+                )
             ),
-          ),
-        ]
+            //todo: should be in the list, make fake listview data
+            Flexible(
+              flex: 3,
+              child: _rooms == null ?
+              Center(child: CircularProgressIndicator()) :
+              ListView.builder(
+                  itemCount: _rooms.length,
+                  itemBuilder: (context, index) {
+                    return Card(
+                      child: ListTile(
+                        title: Text('${_rooms[index].name}'),
+                        onTap: () {
+                          Navigator.of(context).push(MaterialPageRoute(builder: (context) => RoomDetail(room: _rooms[index])));
+                        },
+                      ),
+                    );
+                  }
+              ),
+            ),
+          ]
       ),
+      
     );
-    }
   }
 
-  void getFakeData(){
-    project = widget.project;
-    FakeData fakeData = FakeData();
-    rooms = fakeData.getRooms(project.id);
+
+  void _listenForProject() {
+    _projectStreamSubscription = Database().readProjectRealTime(_project.id).listen((project) {
+      setState(() { _project = project; });
+    });
+  }
+
+  void _listenForProjectRooms() {
+    _roomStreamSubscription = Database().readRoomsRealTime(_project.id).listen((rooms) {
+      rooms.sort((a, b) => (a.name).compareTo(b.name));
+      setState(() { _rooms = rooms; });
+    });
+  }
+
+  @override
+  void dispose() {
+    _projectStreamSubscription.cancel();
+    _roomStreamSubscription.cancel();
+    super.dispose();
   }
 }

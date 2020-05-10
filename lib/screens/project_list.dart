@@ -1,15 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:project_estimator/models/fake_data.dart';
 import 'package:project_estimator/screens/project_detail.dart';
 import 'package:project_estimator/screens/user_setting.dart';
+import 'package:project_estimator/screens/edit_project.dart';
 import 'package:project_estimator/widgets/my_popup_menu.dart' as mypopup;
-import '../models/fake_data.dart';
-import '../models/project.dart';
-
-import 'edit_project.dart';
+import 'package:project_estimator/models/project.dart';
+import 'package:project_estimator/services/database.dart';
 
 class ProjectList extends StatefulWidget {
+  ProjectList({Key key, this.userId}) : super(key: key);
+  final String userId;
   @override
   _ProjectListState createState() => _ProjectListState();
 }
@@ -20,20 +21,19 @@ class _ProjectListState extends State<ProjectList> {
   String _selectedStatus = 'all';
   String _searchWord = "";
 
-  //fake data
-  List<Project> projects = FakeData().getProjects();
+  StreamSubscription<List<Project>> _projectStreamSubscription;
+  List<Project> _projects;
 
-  //filtered data
   List<Project> filteredProjects;
-  
-  DateFormat formatter;
+
 
   @override
   void initState() {
     super.initState();
-    filteredProjects = projects;
-    formatter = DateFormat('y-MM-dd HH:mm');
+
+    _listenForProjects();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -48,7 +48,9 @@ class _ProjectListState extends State<ProjectList> {
           )
         ],
       ),
-      body: Column(
+      body: _projects == null ?
+      Center(child: CircularProgressIndicator()) :
+      Column(
         children: [
           SizedBox(
             height: 50,
@@ -81,6 +83,7 @@ class _ProjectListState extends State<ProjectList> {
                             controller.clear();
                             _searchWord = "";
                             showCancel = false;
+                            filteredProjects = _projects;
                             setState((){});
                         })
                       ),
@@ -161,7 +164,7 @@ class _ProjectListState extends State<ProjectList> {
                 return Column(
                   children: [
                     ListTile(
-                      title: Text(formatter.format(filteredProjects[index].date), style: TextStyle(color: Colors.blue, fontSize: 12)),
+                      title: Text(filteredProjects[index].dateString(), style: TextStyle(color: Colors.blue, fontSize: 12)),
                       // subtitle: Padding(
                       //   padding: const EdgeInsets.only(top: 8.0),
                       //   child: Text('${items[index]['projectName']}', style: TextStyle(fontSize: 18)),
@@ -195,7 +198,7 @@ class _ProjectListState extends State<ProjectList> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.of(context).push(MaterialPageRoute(builder: (context) => EditProject(project: Project())));
+          Navigator.of(context).push(MaterialPageRoute(builder: (context) => EditProject(userId: widget.userId, project: Project())));
         },
         child: Icon(Icons.add),
       ),
@@ -204,7 +207,6 @@ class _ProjectListState extends State<ProjectList> {
   }
   void onSearchTextChanged(String text) {
     _searchWord = text;
-    //todo: search functionality
     if(text.isEmpty) {
       showCancel = false;
       setState(() {});
@@ -220,21 +222,36 @@ class _ProjectListState extends State<ProjectList> {
     // print(_searchWord);
     setState(() {
       if(_selectedStatus == 'all' && _searchWord.isEmpty) { //if filter 'all', and search '', go here
-        filteredProjects = projects;
+        filteredProjects = _projects;
       } else if(_selectedStatus != 'all' && _searchWord.isEmpty) { //if filter a specific status, and search '', go here
-        filteredProjects = projects.where((project)=>project.status.toLowerCase() == (_selectedStatus.toLowerCase())).toList();
+        filteredProjects = _projects.where((project)=>project.status.toLowerCase() == (_selectedStatus.toLowerCase())).toList();
       } else if (_selectedStatus == 'all' && _searchWord.isNotEmpty) { //if filter 'all', and search a specific keyword, go here
-        filteredProjects = projects.where((project)=>project.name.toLowerCase().contains(_searchWord.toLowerCase())
+        filteredProjects = _projects.where((project)=>project.name.toLowerCase().contains(_searchWord.toLowerCase())
                                                   ||project.description.toLowerCase().contains(_searchWord.toLowerCase())
-                                                  ||formatter.format(project.date).contains(_searchWord)).toList();
+                                                  ||project.dateString().contains(_searchWord)).toList();
       } else if (_selectedStatus != 'all' && _searchWord.isNotEmpty){ //if filter a specific status, and search a specific keyword, go here
-        print(filteredProjects[0].status);
-        filteredProjects = projects.where((project)=>project.status.toLowerCase() == (_selectedStatus.toLowerCase())).toList();
+        //print(filteredProjects[0].status);
+        filteredProjects = _projects.where((project)=>project.status.toLowerCase() == (_selectedStatus.toLowerCase())).toList();
         filteredProjects = filteredProjects.where((project)=>project.name.toLowerCase().contains(_searchWord.toLowerCase())
                                                   ||project.description.toLowerCase().contains(_searchWord.toLowerCase())
-                                                  ||formatter.format(project.date).contains(_searchWord)).toList();
+                                                  ||project.dateString().contains(_searchWord)).toList();
       } 
     });
-  }  
+  }
+
+  void _listenForProjects() {
+    _projectStreamSubscription = Database().readProjectsRealTime(widget.userId).listen((projects) {
+      projects.sort((a, b) => (a.date).compareTo(b.date) != 0 ? (a.date).compareTo(b.date) : (a.name).compareTo(b.name));
+      _projects = projects;
+      filter();
+    });
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    _projectStreamSubscription.cancel();
+    super.dispose();
+  }
 }
 

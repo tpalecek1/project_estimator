@@ -292,20 +292,21 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
     PaintSettings settings = fakeData.user.paintSettings;
     rooms = widget.rooms;
     calculateCosts(rooms, settings);
-    for(ProjectNote projectNote in fakeData.getProjectNotes(project.id)){
+    //Get project and room notes from database, add line item for each note with a cost
+    /* for(ProjectNote projectNote in fakeData.getProjectNotes(project.id)){
       if(projectNote.hasCost) estimate.addItem(projectNote.description, 0);
     }
     for(Room room in rooms){
       for(RoomNote roomNote in fakeData.getRoomNotes(room.id)){
         if(roomNote.hasCost) estimate.addItem(room.name + ": " + roomNote.description, 0);
       }
-    }
+    } */
   }
 
   void getFakeData() {
     //If estimate exists in project, get it(todo) else generate one
     project = widget.project;
-    if(project.estimate == null){
+    if(project.estimate.items.length == 0){ //Temporary solution.  Will change to a popup asking the user if they want to generate an estimate
       generateEstimate();
     }
     else {
