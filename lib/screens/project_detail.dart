@@ -127,39 +127,39 @@ class _ProjectDetailState extends State<ProjectDetail> {
                       ],
                     )
                 )
+          ),
+          Flexible(
+            flex: 1,
+            fit: FlexFit.tight,
+            child: Row(
+              children: [
+                Expanded(
+                  child: CustomButton1(
+                    onPressed: () {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => EditProject(project: _project)));
+                    },
+                    child: Text('Edit Project')
+                  )
+                ),
+                Expanded(
+                  child: CustomButton1(
+                    onPressed: () {
+                      Navigator.of(context).pushNamed(ProjectNotes.routeName);
+                    },
+                    child: Text('Show Project Notes')
+                  )
+                ),
+                Expanded(
+                  child: CustomButton1(
+                    onPressed: () {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => ProjectEstimate(project: _project, rooms: _rooms)));
+                    },
+                    child: Text('Show Project Estimate')
+                  )
+                ),
+              ],
             ),
-            Flexible(
-              flex: 1,
-              fit: FlexFit.tight,
-              child: Row(
-                children: [
-                  Expanded(
-                      child: CustomButton1(
-                          onPressed: () {
-                            Navigator.of(context).push(MaterialPageRoute(builder: (context) => EditProject(project: _project)));
-                          },
-                          child: Text('Edit Project')
-                      )
-                  ),
-                  Expanded(
-                      child: CustomButton1(
-                          onPressed: () {
-                            Navigator.of(context).pushNamed(ProjectNotes.routeName);
-                          },
-                          child: Text('Show Project Notes')
-                      )
-                  ),
-                  Expanded(
-                      child: CustomButton1(
-                          onPressed: () {
-                            Navigator.of(context).pushNamed(ProjectEstimate.routeName);
-                          },
-                          child: Text('Show Project Estimate')
-                      )
-                  ),
-                ],
-              ),
-            ),
+          ),
             Flexible(
                 flex: 1,
                 fit: FlexFit.tight,
@@ -195,6 +195,7 @@ class _ProjectDetailState extends State<ProjectDetail> {
             ),
           ]
       ),
+      
     );
   }
 
