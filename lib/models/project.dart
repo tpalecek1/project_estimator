@@ -19,7 +19,7 @@ class Project {
     DateTime date,
     Estimate estimate }) {
     this.date = date ?? DateTime.now();
-    this.estimate = estimate;
+    this.estimate = estimate ?? Estimate();
   }
 
   Project.fromMap(Map<String, dynamic> map, String projectId) :
