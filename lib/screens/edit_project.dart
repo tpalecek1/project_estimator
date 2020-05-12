@@ -29,8 +29,9 @@ class _EditProjectState extends State<EditProject> {
 
   bool _isProcessing = false;
   bool _hasInvalidInput = false;
-  bool _roomsAreModified = false;
+  bool _projectIsModified = false;  // true when new (or edited) project note(s), room(s), room note(s) and/or room photo(s) (when project related entities/sub-collections are modified)
 
+  Project _projectInitialState;     // to help determine if project entity/document (not its related entities/sub-collections) needs to be updated
   Project _project;
   List<Room> _rooms;
   StreamSubscription<List<Room>> _roomStreamSubscription;
@@ -41,6 +42,7 @@ class _EditProjectState extends State<EditProject> {
     
     _project = widget.project;
     if (_project.id != null) {
+      _projectInitialState = Project.fromProject(_project);
       _listenForRooms();
     }
   }
@@ -48,15 +50,15 @@ class _EditProjectState extends State<EditProject> {
   @override 
   Widget build(BuildContext context){
     return WillPopScope(
-      onWillPop: () async => false,                 // disable Android system "back" button
+      onWillPop: () async => _projectIsModified ? false : true,   // disable Android system "back" button (when project is modified)
       child: Scaffold(
         resizeToAvoidBottomInset: false, //Changes keyboard to an overlay instead of pushing the screen up
         appBar: AppBar(
-          automaticallyImplyLeading: false,         // remove Flutter automatic "back" button from AppBar
+          automaticallyImplyLeading: false,                       // remove Flutter automatic "back" button from AppBar
           title: _project.id == null ? Text('New Project') : Text('Edit Project'),
           actions: <Widget>[
             Visibility(
-              visible: _roomsAreModified ? false : true,
+              visible: _projectIsModified ? false : true,         // show cancel button when project is not modified
               child: FlatButton(
                 child: Text('Cancel', style: TextStyle(fontSize: 17.0, color: Colors.white)),
                 onPressed: () {
@@ -78,11 +80,14 @@ class _EditProjectState extends State<EditProject> {
                   setState(() { _isProcessing = true; _hasInvalidInput = false; });
                   String projectId = await Database().createProject(widget.userId, _project);
                   _project = await Database().readProject(projectId);
+                  _projectInitialState = Project.fromProject(_project);
                   _listenForRooms();
                   setState(() { _isProcessing = false; });
                 }
                 else {
-                  Database().updateProject(_project);
+                  if (_project != _projectInitialState) {
+                    Database().updateProject(_project);
+                  }
                   Navigator.of(context).pop();
                 }
 
@@ -217,6 +222,7 @@ class _EditProjectState extends State<EditProject> {
                     child: CustomButton1(
                       onPressed: () {
                         Navigator.of(context).pushNamed(ProjectNotes.routeName);
+                        setState(() { _projectIsModified = true; });    // even though project note(s) may not have been deleted, if user did delete one/some, less confusing if can't cancel on this screen
                       },
                       child: Text('View Project Notes'),
                     ),
@@ -233,6 +239,7 @@ class _EditProjectState extends State<EditProject> {
                               onCancel: (){Navigator.of(context).pop();},
                               onSubmit: (hasCost, note) {
                                 Database().createProjectNote(_project.id, ProjectNote(hasCost: hasCost, description: note));
+                                setState(() { _projectIsModified = true; });
                                 Navigator.of(context).pop();
                               },
                             );
@@ -253,7 +260,7 @@ class _EditProjectState extends State<EditProject> {
                   onPressed: () {
                     Navigator.of(context).push(MaterialPageRoute(builder: (context) => EditRoom(projectId: _project.id, room: Room())))
                     .then((roomIsModified) {
-                      setState(() { _roomsAreModified = roomIsModified; });
+                      setState(() { _projectIsModified = roomIsModified; });
                     });
                   },
                   child: Text('Add Room'),
@@ -288,7 +295,7 @@ class _EditProjectState extends State<EditProject> {
                     onTap: () => {
                       Navigator.of(context).push(MaterialPageRoute(builder: (context) => EditRoom(room: _rooms[index])))
                         .then((roomIsModified) {
-                          setState(() { _roomsAreModified = roomIsModified; });
+                          setState(() { _projectIsModified = roomIsModified; });
                         })
                     },
                   )

@@ -1,20 +1,8 @@
 class Estimate {
-  String id;
   List<Item> items;
+
   Estimate({ List<Item> items }) {
     this.items = items ?? List<Item>();
-  }
-
-  Estimate.fromMap(Map<String, dynamic> map, String estimateId){
-    items = itemsFromString(map['items']);
-  }
-
-
-  Map<String, dynamic> toMap() {
-    return {
-      'name': 'a',
-      'items': itemsToString(),
-    };
   }
 
   Estimate.fromString(String string) {

@@ -22,7 +22,18 @@ class Project {
     this.estimate = estimate ?? Estimate();
   }
 
-  Project.fromMap(Map<String, dynamic> map, String projectId) :
+  Project.fromProject(Project project) :
+    id = project.id,
+    name = project.name,
+    status = project.status,
+    description = project.description,
+    clientName = project.clientName,
+    clientAddress = project.clientAddress,
+    clientPhoneNumber = project.clientPhoneNumber,
+    date = DateTime(project.date.year, project.date.month, project.date.day),
+    estimate = Estimate.fromString(project.estimate.itemsToString());
+
+  Project.fromMap(Map<String, dynamic> map, [String projectId]) :
     id = projectId,
     name = map['name'],
     status = map["status"],

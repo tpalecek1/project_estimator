@@ -69,14 +69,6 @@ abstract class DatabaseInterface {
   Future<List<RoomNote>> readRoomNotesWithCost(String roomId);
   Future<void> updateRoomNote(RoomNote note);
   Future<void> deleteRoomNote(String roomNoteId);
-
-  // estimates
-  Future<String> createEstimate(String projectId, Estimate estimate);
-  Future<Estimate> readEstimate(String estimateId);
-  Future<List<Estimate>> readEstimates(String projectId);
-  Stream<List<Estimate>> readEstimatesRealTime(String projectId);
-  Future<void> updateEstimate(Estimate estimate);
-  Future<void> deleteEstimate(String estimateId);
 }
 
 class Database implements DatabaseInterface {
@@ -89,7 +81,6 @@ class Database implements DatabaseInterface {
   static const String projectNotes = 'projectNotes';
   static const String rooms = 'rooms';
   static const String roomNotes = 'roomNotes';
-  static const String estimates = 'estimates';
 
 
 
@@ -537,95 +528,6 @@ class Database implements DatabaseInterface {
   Future<void> deleteRoomNote(String roomNoteId) async {
     try {
       await _db.document(roomNoteId).delete();
-    }
-    catch (error) {
-      rethrow;
-    }
-  }
-
-
-
-  // estimates  (projectId = project doc path, estimateId and estimate.id = estimate doc path)
-  Future<String> createEstimate(String projectId, Estimate estimate) async {
-    DocumentReference doc;
-
-    try {
-      doc = await _db.document(projectId).collection(estimates).add(estimate.toMap());
-    }
-    catch (error) {
-      rethrow;
-    }
-
-    return doc.path;
-  }
-
-  Future<Estimate> readEstimate(String estimateId) async {
-    DocumentSnapshot doc;
-
-    try {
-      doc = await _db.document(estimateId).get();
-    }
-    catch (error) {
-      rethrow;
-    }
-
-    return doc.exists ? Estimate.fromMap(doc.data, doc.reference.path) : null;
-  }
-
-  Future<List<Estimate>> readEstimates(String projectId) async {
-    QuerySnapshot query;
-
-    try {
-      query = await _db.document(projectId).collection(estimates).getDocuments();
-    }
-    catch (error) {
-      rethrow;
-    }
-
-    return query.documents.map((doc) => Estimate.fromMap(doc.data, doc.reference.path)).toList();
-  }
-
-  Stream<List<Estimate>> readEstimatesRealTime(String projectId) {
-    StreamController<List<Estimate>> estimateStreamCtl;
-    StreamSubscription estimateStreamSub;
-
-    void listenForEstimates() {
-      estimateStreamSub = _db.document(projectId).collection(estimates).snapshots().listen((snapshot) {
-        if (snapshot.documents.isNotEmpty) {
-          List<Estimate> docs = snapshot.documents.map((doc) => Estimate.fromMap(doc.data, doc.reference.path)).toList();
-          estimateStreamCtl.add(docs);
-        }
-        else {
-          estimateStreamCtl.add(List<Estimate>());
-        }
-      });
-    }
-
-    void stopListeningForEstimates() {
-      estimateStreamSub.cancel();
-      estimateStreamCtl.close();
-    }
-
-    estimateStreamCtl = StreamController<List<Estimate>>.broadcast(
-        onListen: listenForEstimates,
-        onCancel: stopListeningForEstimates
-    );
-
-    return estimateStreamCtl.stream;
-  }
-
-  Future<void> updateEstimate(Estimate estimate) async {
-    try {
-      await _db.document(estimate.id).updateData(estimate.toMap());
-    }
-    catch (error) {
-      rethrow;
-    }
-  }
-
-  Future<void> deleteEstimate(String estimateId) async {
-    try {
-      await _db.document(estimateId).delete();
     }
     catch (error) {
       rethrow;

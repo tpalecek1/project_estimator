@@ -26,8 +26,9 @@ class _EditRoomState extends State<EditRoom> {
 
   bool _isProcessing = false;
   bool _hasInvalidInput = false;
-  bool _roomIsModified = false;
+  bool _roomIsModified = false;     // true when new (or edited) room, room note(s) and/or room photo(s)
 
+  Room _roomInitialState;           // to help determine if room entity/document (not its related entities/sub-collections) needs to be updated
   Room _room;
   List<RoomNote> _notes;
   StreamSubscription<List<RoomNote>> _roomNoteStreamSubscription;
@@ -38,6 +39,7 @@ class _EditRoomState extends State<EditRoom> {
 
     _room = widget.room;
     if (_room.id != null) {
+      _roomInitialState = Room.fromRoom(_room);
       _listenForRoomNotes();
     }
   }
@@ -45,15 +47,20 @@ class _EditRoomState extends State<EditRoom> {
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: () async => false,                 // disable Android system "back" button
+      onWillPop: () async {                                       // disable Android system "back" button (when room is modified)
+        if (!_roomIsModified) {
+          Navigator.of(context).pop(_roomIsModified);
+        }
+        return false;
+      },
       child: Scaffold(
           resizeToAvoidBottomInset: false,
           appBar: AppBar(
-            automaticallyImplyLeading: false,       // remove Flutter automatic "back" button from AppBar
+            automaticallyImplyLeading: false,                     // remove Flutter automatic "back" button from AppBar
             title: _room.id == null ? Text('New Room') : Text('Edit Room'),
             actions: <Widget>[
               Visibility(
-                visible: _roomIsModified ? false : true,
+                visible: _roomIsModified ? false : true,          // show cancel button when room is not modified
                 child: FlatButton(
                   child: Text('Cancel', style: TextStyle(fontSize: 17.0, color: Colors.white)),
                   onPressed: () {
@@ -75,12 +82,15 @@ class _EditRoomState extends State<EditRoom> {
                       setState(() { _isProcessing = true; _hasInvalidInput = false; });
                       String roomId = await Database().createRoom(widget.projectId, _room);
                       _room = await Database().readRoom(roomId);
+                      _roomInitialState = Room.fromRoom(_room);
                       _listenForRoomNotes();
                       setState(() { _isProcessing = false; _roomIsModified = true; });
                     }
                     else {
-                      Database().updateRoom(_room);
-                      _roomIsModified = true;
+                      if (_room != _roomInitialState) {
+                        Database().updateRoom(_room);
+                      }
+                      _roomIsModified = true;   // even though room entity/document may not have changed, user pressed fab checkmark, so less confusing if can't cancel on EditProject screen
                       Navigator.of(context).pop(_roomIsModified);
                     }
 

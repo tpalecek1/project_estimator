@@ -22,6 +22,20 @@ class Room {
     this.photos = photos ?? List<String>();
   }
 
+  Room.fromRoom(Room room) :
+    id = room.id,
+    name = room.name,
+    ceilingHeight = room.ceilingHeight,
+    length = room.length,
+    width = room.width,
+    doorCount = room.doorCount,
+    windowCount = room.windowCount,
+    accentWallCount = room.accentWallCount,
+    hasCrown = room.hasCrown,
+    hasChairRail = room.hasChairRail,
+    hasBaseboard = room.hasBaseboard,
+    photos = List.from(room.photos);
+
   Room.fromMap(Map<String, dynamic> map, String roomId) :
     id = roomId,
     name = map['name'],
