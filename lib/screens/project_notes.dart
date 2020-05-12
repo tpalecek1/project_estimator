@@ -1,12 +1,14 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:project_estimator/models/fake_data.dart';
+import 'package:project_estimator/services/database.dart';
 import 'package:project_estimator/models/project_note.dart';
 import 'package:project_estimator/models/room.dart';
 import 'package:project_estimator/models/room_note.dart';
 
 class ProjectNotes extends StatefulWidget {
-
+  ProjectNotes({ Key key, this.projectId }) : super(key: key);
   static const routeName = 'project_notes';
+  final String projectId;
 
   @override
   _ProjectNotesState createState() => _ProjectNotesState();
@@ -14,201 +16,189 @@ class ProjectNotes extends StatefulWidget {
 
 class _ProjectNotesState extends State<ProjectNotes> {
 
-  //fake data alternative option, not use this one now, will delete this data after backend integration. Just for reference
-  List<Entry> data = <Entry>[
-    Entry('title', 'General Notes', false,
-      <Entry>[
-        Entry('projectNote', 'General Note 1 long long long long long long long long long long long long long long long long note', false),
-        Entry('projectNote', 'General Note 2', true),
-        Entry('projectNote', 'General Note 3', false),
-      ],
-    ),
-    Entry('title', 'Room Notes', false,
-      <Entry>[
-        Entry('room', 'Living Room', false,
-          <Entry>[
-            Entry('roomNote', 'Room #1 Note 1', true),
-            Entry('roomNote', 'Room #1 Note 2', false),
-          ],
-        ),
-        Entry('room', 'bathroom', false,
-          <Entry>[
-            Entry('roomNote', 'Room #2 Note 1',false),
-            Entry('roomNote', 'Room #2 Note 2',true),
-          ],
-        ),
-      ],
-    ),
-  ];
+  List<ProjectNote> _projectNotes;
+  Map<String, RoomInfo> _roomNotes;   // { 'roomId': RoomInfo(name: 'room name', notes: List<RoomNote>) }
 
-  //get the data from the fake_data model and transform the data into the form that can be feeded into ExpansionTile
-  List<Entry> getDate({String projectId}) { //get faked data from project id     
-    
-    FakeData fakeData = FakeData();
-    List<Entry> whole = List<Entry>();
+  StreamSubscription<List<ProjectNote>> _projectNoteStreamSubscription;
+  List<StreamSubscription<List<RoomNote>>> _roomNoteStreamSubscriptions;
 
-    //get projectNote data
-    List<ProjectNote> projectNotesSource = fakeData.getProjectNotes(projectId);
-    List<Entry> projectNoteList = List<Entry>();
-    for(int i=0; i<projectNotesSource.length; i++) {
-      Entry projectNote = Entry('projectNote', projectNotesSource[i].description,  projectNotesSource[i].hasCost);
-      projectNoteList.add(projectNote);
-    }
-    Entry projectNoteLayoutBox = Entry('title', 'General Notes', false);
-    projectNoteLayoutBox.children = projectNoteList;
-
-    //get roomNote data
-    List<Room> rooms = fakeData.getRooms(projectId);
-    List<Entry> roomList = List<Entry>();
-    for(int i=0; i<rooms.length; i++) {
-      List<RoomNote> roomNotesSource = fakeData.getRoomNotes(rooms[i].id);
-      List<Entry> roomNoteList = List<Entry>();
-      for(int i=0; i<roomNotesSource.length; i++) {
-        Entry roomNote = Entry('projectNote', roomNotesSource[i].description,  roomNotesSource[i].hasCost);
-        roomNoteList.add(roomNote);
-      }      
-      Entry room = Entry('room', rooms[i].name, false);
-      room.children = roomNoteList;
-      roomList.add(room);
-    }
-    Entry roomNoteLayoutBox = Entry('title', 'Room Notes', false);
-    roomNoteLayoutBox.children = roomList;
-
-    whole.add(projectNoteLayoutBox);
-    whole.add(roomNoteLayoutBox);
-
-    return whole;
-  }
   @override
   void initState() {
     super.initState();
-    data = getDate(projectId: '0'); //get the faked data from project id '0'
+
+    _listenForProjectNotes();
+    _listenForProjectRoomsNotes();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Project Notes'),
-      ),
-      body: Stack(
-        children: [
-          Container(
-            decoration: BoxDecoration(image: DecorationImage(image: AssetImage('assets/images/note.png'), fit: BoxFit.fill))
-          ),
-          ListView.builder(
-            padding: EdgeInsets.only(top: 16),
-            itemCount: data.length,
-            itemBuilder: (context, index) {
-              return EntryItem(data[index], index, delete);
-            }
-          ),
-        ],
-      )
+        appBar: AppBar(
+          title: Text('Project Notes'),
+        ),
+        body: Stack(
+          children: [
+            Container(
+                decoration: BoxDecoration(image: DecorationImage(image: AssetImage('assets/images/note.png'), fit: BoxFit.fill))
+            ),
+            _projectNotes == null || _roomNotes == null ?
+            Center(child: CircularProgressIndicator()) :
+            ListView(
+              padding: EdgeInsets.only(top: 16),
+              children: <Widget>[
+                Card(                                           // General notes
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(color: Colors.brown, width: 3),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    margin: EdgeInsets.fromLTRB(8, 4, 8, 4),
+                    child: _projectNotes.length == 0 ?
+                    ListTile(title: Text('General Notes'), trailing:Text('empty', style: TextStyle(color: Colors.red))) :
+                    ExpansionTile(
+                      initiallyExpanded: false,
+                      title: Text('General Notes'),
+                      children: <Widget>[
+                        ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: _projectNotes.length,
+                          itemBuilder: (context, index) {
+                            if (_projectNotes[index].hasCost) {
+                              return ListTile(
+                                  title: RichText(
+                                      text: TextSpan(children: [
+                                        TextSpan(text:'${_projectNotes[index].description}  ', style: TextStyle(fontSize: 16,color: Colors.black)),
+                                        TextSpan(text:'has cost', style: TextStyle(color: Colors.red)),
+                                      ])
+                                  ),
+                                  trailing: RaisedButton(
+                                      onPressed: () { Database().deleteProjectNote(_projectNotes[index].id); },
+                                      child: Text('delete')
+                                  )
+                              );
+                            }
+                            else {
+                              return ListTile(
+                                  title: Text(_projectNotes[index].description),
+                                  trailing: RaisedButton(
+                                      onPressed: () { Database().deleteProjectNote(_projectNotes[index].id); },
+                                      child: Text('delete')
+                                  )
+                              );
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                ),
+                Card(                                          // Room notes
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(color: Colors.brown, width: 3),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    margin: EdgeInsets.fromLTRB(8, 4, 8, 4),
+                    child: _roomNotes.length == 0 ?
+                    ListTile(title: Text('Room Notes'), trailing:Text('empty', style: TextStyle(color: Colors.red))) :
+                    ExpansionTile(
+                      initiallyExpanded: true,
+                      title: Text('Room Notes'),
+                      children: <Widget>[
+                        ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: _roomNotes.length,
+                          itemBuilder: (context, roomIndex) {
+                            String roomId = _roomNotes.keys.elementAt(roomIndex);
+                            if (_roomNotes[roomId].notes.length == 0) {
+                              return ListTile(
+                                  title: Text(_roomNotes[roomId].name),
+                                  trailing:Text('empty', style: TextStyle(color: Colors.red))
+                              );
+                            }
+                            else {
+                              return ExpansionTile(
+                                initiallyExpanded: true,
+                                title: Text(_roomNotes[roomId].name),
+                                children: <Widget>[
+                                  ListView.builder(
+                                    shrinkWrap: true,
+                                    itemCount: _roomNotes[roomId].notes.length,
+                                    itemBuilder: (context, noteIndex) {
+                                      if (_roomNotes[roomId].notes[noteIndex].hasCost) {
+                                        return ListTile(
+                                            title: RichText(
+                                                text: TextSpan(children: [
+                                                  TextSpan(text:'${_roomNotes[roomId].notes[noteIndex].description}  ', style: TextStyle(fontSize: 16,color: Colors.black)),
+                                                  TextSpan(text:'has cost', style: TextStyle(color: Colors.red)),
+                                                ])
+                                            ),
+                                            trailing: RaisedButton(
+                                                onPressed: () { Database().deleteRoomNote(_roomNotes[roomId].notes[noteIndex].id); },
+                                                child: Text('delete')
+                                            )
+                                        );
+                                      }
+                                      else {
+                                        return ListTile(
+                                            title: Text(_roomNotes[roomId].notes[noteIndex].description),
+                                            trailing: RaisedButton(
+                                                onPressed: () { Database().deleteRoomNote(_roomNotes[roomId].notes[noteIndex].id); },
+                                                child: Text('delete')
+                                            )
+                                        );
+                                      }
+                                    },
+                                  )
+                                ],
+                              );
+                            }
+                          },
+                        )
+                      ],
+                    ),
+                )
+              ],
+            ),
+          ],
+        )
     );
   }
 
-  //the delete function
-  void delete(int index, int roomIndex, int noteIndex) {
-    setState(() {
-      if(index == 0) { //index = 0 means "General Note" area
-        data[index].children.removeAt(noteIndex);
-      } else { //index = 1 means "Room Note" area
-        data[index].children[roomIndex].children.removeAt(noteIndex);
-        // if(data[index].children[roomIndex].children.isEmpty) {
-        //   data[index].children.removeAt(roomIndex);
-        // }
-      }
+  void _listenForProjectNotes() {
+    _projectNoteStreamSubscription = Database().readProjectNotesRealTime(widget.projectId).listen((notes) {
+      notes.sort((a, b) => (a.description).compareTo(b.description));
+      setState(() { _projectNotes = notes; });
     });
   }
-}
 
-// One entry in the multilevel list displayed by this app. (fake data unit)
-class Entry {
-  Entry(this.category, this.content, this.hasCost, [this.children = const <Entry>[]]); //optional parameter, if no children parameter, the default is an empty list
-  String category; //title, room, projectNote, roomNote
-  String content;
-  List<Entry> children;
-  bool hasCost;
-  // final List<Map<String,dynamic>> estimateItem;
-  int roomIndex = -99; //for tracking room index
-  int noteIndex = -99; //for tracking each note item
-}
+  void _listenForProjectRoomsNotes() async {
+    List<Room> rooms = await Database().readRooms(widget.projectId);
+    rooms.sort((a, b) => (a.name).compareTo(b.name));
 
-// Displays one Entry. If the entry has children then it's displayed with an ExpansionTile.
-class EntryItem extends StatelessWidget {
-  EntryItem(this.entry, this.index, this.delete);
-  final Entry entry;
-  Function(int, int, int) delete;
+    _roomNotes = Map<String, RoomInfo>();
+    _roomNoteStreamSubscriptions = List<StreamSubscription<List<RoomNote>>>();
 
-  //there four kinds of indexes are used to track each note in the data
-  int index; //0: in project notes area; 1: in room notes area
-  int roomIndex = -2; //for tracking room index (which room the note locates), use 2 because first one is project title, sencond one is room title
-  int roomIndexKeep = -99; //for helping restarting noteIndex for each room
-  int noteIndex = -1; //for tracking each note item (index for each note in a room)
+    StreamSubscription<List<RoomNote>> roomNoteStreamSubscription;
+
+    await Future.forEach(rooms, (room) async {
+      _roomNotes[room.id] = RoomInfo(name: room.name, notes: List<RoomNote>());
+      roomNoteStreamSubscription = Database().readRoomNotesRealTime(room.id).listen((notes) {
+        notes.sort((a, b) => (a.description).compareTo(b.description));
+        setState(() { _roomNotes[room.id].notes = notes; });
+      });
+      _roomNoteStreamSubscriptions.add(roomNoteStreamSubscription);
+    });
+  }
 
   @override
-  Widget build(BuildContext context) {
-    roomIndex = -2;
-    noteIndex = -1;
-    return Card(
-      shape: RoundedRectangleBorder(
-        side: BorderSide(color: Colors.brown, width: 3),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      margin: EdgeInsets.fromLTRB(8, 4, 8, 4), 
-      child: _buildTiles(entry) 
-    );
+  void dispose() {
+    _projectNoteStreamSubscription.cancel();
+    _roomNoteStreamSubscriptions.forEach((roomNoteStreamSubscription) { roomNoteStreamSubscription.cancel(); });
+    super.dispose();
   }
+}
 
-  Widget _buildTiles(Entry root) {
+class RoomInfo {
+  String name;
+  List<RoomNote> notes;
 
-    //assign index to each entry, so later each item can be tracked
-    if (root.children.isEmpty)
-    {
-      if(index == 0) { //index: 0 means "General Note" area, index:1 means "Room Note" area
-        noteIndex++;
-        root.noteIndex = noteIndex;
-      } else {
-        if(roomIndex != roomIndexKeep) { //if these two type of indexes are not the same, restart the count of noteIndex
-          noteIndex = -1;
-          roomIndexKeep = roomIndex;
-        }
-        noteIndex++;
-        root.noteIndex = noteIndex;
-        root.roomIndex = roomIndex;  
-      }
-
-      //Assign layout to each entry object
-      if(root.category == "title") 
-        return ListTile(title: Text(root.content), trailing:Text('empty', style: TextStyle(color: Colors.red)));
-      else if(root.category == "room") {
-        roomIndex++;
-        return ListTile(title: Text(root.content), trailing:Text('empty', style: TextStyle(color: Colors.red)));
-      } else if(root.hasCost) {
-        return ListTile(title: RichText(
-          text: TextSpan(children: [
-            TextSpan(text:'${root.content}  ', style: TextStyle(fontSize: 16,color: Colors.black)),
-            TextSpan(text:'has cost', style: TextStyle(color: Colors.red)),
-          ])), 
-          trailing: RaisedButton(onPressed: () {
-          // print('$index, ${root.roomIndex}, ${root.noteIndex}');
-            delete(index, root.roomIndex, root.noteIndex);
-          }, child: Text('delete')
-        ));
-      }
-      else
-        return ListTile(title: Text(root.content), trailing: RaisedButton(onPressed: () {
-          // print('$index, ${root.roomIndex}, ${root.noteIndex}');
-          delete(index, root.roomIndex, root.noteIndex);
-        }, child: Text('delete')));      
-    }
-    roomIndex++;  //for tracking room index
-    return ExpansionTile(
-      initiallyExpanded: root.category == 'room'|| root.content == 'Room Notes'? true: false, //expand all Room notes initailly
-      key: PageStorageKey<Entry>(root),
-      title: Text(root.content),
-      children: root.children.map<Widget>(_buildTiles).toList(),
-    );
-  }
+  RoomInfo({ this.name, this.notes });
 }

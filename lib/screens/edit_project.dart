@@ -221,8 +221,10 @@ class _EditProjectState extends State<EditProject> {
                   Expanded(
                     child: CustomButton1(
                       onPressed: () {
-                        Navigator.of(context).pushNamed(ProjectNotes.routeName);
-                        setState(() { _projectIsModified = true; });    // even though project note(s) may not have been deleted, if user did delete one/some, less confusing if can't cancel on this screen
+                        Navigator.of(context).push(MaterialPageRoute(builder: (context) => ProjectNotes(projectId: _project.id)))
+                        .whenComplete(() {
+                          setState(() { _projectIsModified = true; });    // even though project note(s) may not have been deleted, if user did delete one/some, less confusing if can't cancel on this screen
+                        });
                       },
                       child: Text('View Project Notes'),
                     ),
