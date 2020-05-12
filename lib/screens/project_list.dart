@@ -43,6 +43,7 @@ class _ProjectListState extends State<ProjectList> {
           IconButton(
             icon: Icon(Icons.settings),
             onPressed: () {
+              FocusScope.of(context).requestFocus(FocusNode()); //to unfocus serach textField, weird way
               Navigator.of(context).pushNamed(UserSetting.routeName);
             },
           )
@@ -66,11 +67,13 @@ class _ProjectListState extends State<ProjectList> {
                     children:[
                       Expanded(
                         child: TextField(
+                          textInputAction: TextInputAction.search,
                           controller: controller,
                           decoration: InputDecoration(
                             hintText: 'Search', border: InputBorder.none, contentPadding: const EdgeInsets.only(left: 12, bottom: 12)
                           ),
                           onChanged: onSearchTextChanged,
+                          onEditingComplete: (){filter();FocusScope.of(context).unfocus();},                          
                         ),
                       ),
                       Visibility(
@@ -83,8 +86,7 @@ class _ProjectListState extends State<ProjectList> {
                             controller.clear();
                             _searchWord = "";
                             showCancel = false;
-                            filteredProjects = _projects;
-                            setState((){});
+                            filter();
                         })
                       ),
                     ]
@@ -137,6 +139,7 @@ class _ProjectListState extends State<ProjectList> {
                         _selectedStatus = newValue;
                         filter();
                       },
+                      onCanceled: (){FocusScope.of(context).requestFocus(FocusNode());}, //to unfocus serach textField
                       itemBuilder: (BuildContext context) {
                         return <String>['all', 'bid', 'not bid', 'awarded', 'not awarded', 'started', 'complete'].map((String choice) {
                           return mypopup.PopupMenuItem<String>(
@@ -165,10 +168,6 @@ class _ProjectListState extends State<ProjectList> {
                   children: [
                     ListTile(
                       title: Text(filteredProjects[index].dateString(), style: TextStyle(color: Colors.blue, fontSize: 12)),
-                      // subtitle: Padding(
-                      //   padding: const EdgeInsets.only(top: 8.0),
-                      //   child: Text('${items[index]['projectName']}', style: TextStyle(fontSize: 18)),
-                      // ),
                       subtitle: Padding(
                         padding: const EdgeInsets.only(top: 8.0),
                         child: RichText(
@@ -198,6 +197,7 @@ class _ProjectListState extends State<ProjectList> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
+          FocusScope.of(context).requestFocus(FocusNode()); //to unfocus serach textField, weird way
           Navigator.of(context).push(MaterialPageRoute(builder: (context) => EditProject(userId: widget.userId, project: Project())));
         },
         child: Icon(Icons.add),
