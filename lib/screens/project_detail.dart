@@ -5,13 +5,15 @@ import 'package:project_estimator/screens/project_estimate.dart';
 import 'package:project_estimator/screens/project_notes.dart';
 import 'package:project_estimator/screens/room_detail.dart';
 import 'package:project_estimator/widgets/custom_button_1.dart';
+import '../models/user.dart';
 import '../models/project.dart';
 import '../models/room.dart';
 import 'package:project_estimator/services/database.dart';
 
 class ProjectDetail extends StatefulWidget{
-  ProjectDetail({Key key, this.project}) : super(key: key);
+  ProjectDetail({Key key, this.user, this.project}) : super(key: key);
   static const routeName = 'project_detail';
+  final User user;
   final Project project;
   @override
   _ProjectDetailState createState() => _ProjectDetailState();
@@ -19,7 +21,7 @@ class ProjectDetail extends StatefulWidget{
 
 
 class _ProjectDetailState extends State<ProjectDetail> {
-
+  User _user;
   Project _project;
   List<Room> _rooms;
   StreamSubscription<Project> _projectStreamSubscription;
@@ -28,7 +30,7 @@ class _ProjectDetailState extends State<ProjectDetail> {
   @override 
   void initState() { 
     super.initState();
-
+    _user = widget.user;
     _project = widget.project;
     _listenForProject();
     _listenForProjectRooms();
@@ -152,7 +154,7 @@ class _ProjectDetailState extends State<ProjectDetail> {
                 Expanded(
                   child: CustomButton1(
                     onPressed: () {
-                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => ProjectEstimate(project: _project, rooms: _rooms)));
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => ProjectEstimate(user: _user, project: _project, rooms: _rooms)));
                     },
                     child: Text('Show Project Estimate')
                   )

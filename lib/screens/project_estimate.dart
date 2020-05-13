@@ -4,12 +4,14 @@ import '../models/project.dart';
 import '../models/room.dart';
 import '../models/room_note.dart';
 import '../models/project_note.dart';
+import '../models/user.dart';
 import '../models/fake_data.dart';
 import '../models/paint_settings.dart';
 
 class ProjectEstimate extends StatefulWidget {
-  ProjectEstimate({Key key, this.project, this.rooms}) : super(key: key);
+  ProjectEstimate({Key key, this.user, this.project, this.rooms}) : super(key: key);
   static const routeName = 'project_estimate';
+  final User user;
   final Project project;
   final List<Room> rooms;
 
@@ -19,6 +21,7 @@ class ProjectEstimate extends StatefulWidget {
 
 class _ProjectEstimateState extends State<ProjectEstimate> {
   final formKey = GlobalKey<FormState>();
+  User user;
   Project project;
   List<Room> rooms;
   Estimate estimate;
@@ -26,6 +29,7 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
   @override
   void initState() {
     super.initState();
+    user = widget.user;
     getData();
   }
 
@@ -288,8 +292,7 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
 
   void generateEstimate(){
     estimate = Estimate();
-    FakeData fakeData = FakeData();
-    PaintSettings settings = fakeData.user.paintSettings;
+    PaintSettings settings = widget.user.paintSettings;
     rooms = widget.rooms;
     calculateCosts(rooms, settings);
     //Get project and room notes from database, add line item for each note with a cost

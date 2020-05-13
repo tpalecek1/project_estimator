@@ -14,13 +14,16 @@ class CheckboxFormField extends FormField<bool> {
             initialValue: initialValue,
             autovalidate: autovalidate,
             builder: (FormFieldState<bool> state) {
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  title,
-                  Checkbox(
-                    value: state.value, 
-                    onChanged: state.didChange)
-                ],);
+              return Container(
+                height: 25,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    title,
+                    Checkbox(
+                      value: state.value, 
+                      onChanged: state.didChange)
+                  ],)
+              );
             });
 }
