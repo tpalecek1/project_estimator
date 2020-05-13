@@ -152,7 +152,8 @@ class _EditRoomState extends State<EditRoom> {
             textAlign: TextAlign.left,
           ),
           Flexible(
-            flex: 6,
+            fit: FlexFit.loose,
+            flex: 7,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -338,56 +339,34 @@ class _EditRoomState extends State<EditRoom> {
     _roomNoteStreamSubscription?.cancel();
     super.dispose();
   }
-}
 
-Widget textField(BuildContext context,{String labelText, String initialValue, double width, Function onSaved, Function validator}){
-  return Container(
-    height: 40,
-    width: width,
-    child: Padding(
-      padding: EdgeInsets.all(2),
-      child: TextFormField(
-        initialValue: initialValue,
-        textAlign: TextAlign.left,
-        keyboardType: TextInputType.text,
-        decoration: InputDecoration(
-          labelText: labelText,
-          border: OutlineInputBorder(),
-          contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+  Widget textField(BuildContext context,{String labelText, String initialValue, double width, Function onSaved, Function validator}){
+    return Container(
+      //height: 50,
+      width: width,
+      child: Padding(
+        padding: EdgeInsets.all(2),
+        child: TextFormField(
+          autovalidate: _hasInvalidInput ? true : false,
+          initialValue: initialValue,
+          textAlign: TextAlign.left,
+          keyboardType: TextInputType.text,
+          decoration: InputDecoration(
+            errorStyle: TextStyle(
+              fontSize: 10,
+            ),
+            labelText: labelText,
+            border: OutlineInputBorder(),
+            contentPadding: EdgeInsets.symmetric(vertical: 2, horizontal: 10),
+          ),
+          onSaved: (value){
+            onSaved(value);
+          },
+          validator: (value){
+            return validator(value);
+          }
         ),
-        onSaved: (value){
-          onSaved(value);
-        },
-        validator: (value){
-          validator(value);
-        }
-      ),
-    )
-  );
-}
-
-Widget numField(BuildContext context,{String labelText, double, initialValue, double width, Function onSaved, Function validator}){
-  return Container(
-    height: 40,
-    width: width,
-    child: Padding(
-      padding: EdgeInsets.all(2),
-      child: TextFormField(
-        initialValue: initialValue,
-        textAlign: TextAlign.left,
-        keyboardType: TextInputType.number,
-        decoration: InputDecoration(
-          labelText: labelText,
-          border: OutlineInputBorder(),
-          contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
-        ),
-        onSaved: (value){
-          onSaved(value);
-        },
-        validator: (value){
-          validator(value);
-        }
-      ),
-    )
-  );
+      )
+    );
+  }
 }

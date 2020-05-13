@@ -157,12 +157,11 @@ class _EditProjectState extends State<EditProject> {
                     textAlign: TextAlign.left,
                   ),
                   Container(
-                    height: 50,
                     padding: EdgeInsets.all(5),
                     child: _projectName(),
                   ),
                   Container(
-                    height: 50,
+                    height: 46,
                     padding: EdgeInsets.all(5),
                     child: TextFormField(
                       initialValue: _project.clientName,
@@ -178,7 +177,7 @@ class _EditProjectState extends State<EditProject> {
                     ),
                   ),
                   Container(
-                    height: 50,
+                    height: 46,
                     padding: EdgeInsets.all(5),
                     child: TextFormField(
                       autovalidate: _hasInvalidInput ? true : false,
@@ -195,7 +194,7 @@ class _EditProjectState extends State<EditProject> {
                     ),
                   ),
                   Container(
-                    height: 50,
+                    height: 46,
                     padding: EdgeInsets.all(5),
                     child: TextFormField(
                       autovalidate: _hasInvalidInput ? true : false,
@@ -273,8 +272,9 @@ class _EditProjectState extends State<EditProject> {
               flex: 1,
               fit: FlexFit.tight,
               child: Container(
+                padding: EdgeInsets.only(left: 5),
                 child: Align(
-                  alignment: Alignment.center,
+                  alignment: Alignment.topLeft,
                   child: Text('Rooms List', 
                     style: Theme.of(context).textTheme.display1
                   ), 
@@ -289,7 +289,7 @@ class _EditProjectState extends State<EditProject> {
                 itemCount: _rooms.length,
                 itemBuilder: (context, index){
                 return Container(
-                  margin: EdgeInsets.all(1),
+                  margin: EdgeInsets.fromLTRB(5, 2, MediaQuery.of(context).size.width*.25, 2),
                   decoration: BoxDecoration(border: Border.all(), borderRadius: BorderRadius.circular(10)),
                   child: ListTile(
                     title: Text(_rooms[index].name),
