@@ -6,7 +6,6 @@ import 'package:project_estimator/screens/user_setting.dart';
 import 'package:project_estimator/screens/edit_project.dart';
 import 'package:project_estimator/widgets/my_popup_menu.dart' as mypopup;
 import 'package:project_estimator/models/project.dart';
-import 'package:project_estimator/models/user.dart';
 import 'package:project_estimator/services/database.dart';
 
 class ProjectList extends StatefulWidget {
@@ -22,7 +21,6 @@ class _ProjectListState extends State<ProjectList> {
   String _selectedStatus = 'all';
   String _searchWord = "";
 
-  User _user;
   StreamSubscription<List<Project>> _projectStreamSubscription;
   List<Project> _projects;
 
@@ -32,10 +30,9 @@ class _ProjectListState extends State<ProjectList> {
   @override
   void initState() {
     super.initState();
-    getUser(widget.userId);
+
     _listenForProjects();
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -188,7 +185,7 @@ class _ProjectListState extends State<ProjectList> {
                         ]
                       ),
                       onTap: () {
-                        Navigator.of(context).push(MaterialPageRoute(builder: (context) => ProjectDetail(user: _user, project: filteredProjects[index])));
+                        Navigator.of(context).push(MaterialPageRoute(builder: (context) => ProjectDetail(userId: widget.userId, project: filteredProjects[index])));
                       },
                     ),
                     Divider(height: 1)
@@ -248,10 +245,6 @@ class _ProjectListState extends State<ProjectList> {
       _projects = projects;
       filter();
     });
-  }
-
-  void getUser(String userId) async {
-    _user = await Database().readUser(userId);
   }
 
   @override
