@@ -736,6 +736,8 @@ Future<T> showMenu<T>({
     case TargetPlatform.fuchsia:
       label =
           semanticLabel ?? MaterialLocalizations.of(context)?.popupMenuLabel;
+      break;
+    default:
   }
 
   return Navigator.push(
@@ -951,6 +953,7 @@ class _PopupMenuButtonState<T> extends State<PopupMenuButton<T>> {
         return const Icon(Icons.more_vert);
       case TargetPlatform.iOS:
         return const Icon(Icons.more_horiz);
+      default:
     }
     return null;
   }

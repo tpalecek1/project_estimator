@@ -307,16 +307,20 @@ class _EditRoomState extends State<EditRoom> {
                 itemCount: _notes.length,
                 itemBuilder: (context, index){
                 return Container(
-                  margin: EdgeInsets.all(1),
+                  margin: EdgeInsets.fromLTRB(5, 2, MediaQuery.of(context).size.width*.25, 2),
+                  //margin: EdgeInsets.all(1),
                   decoration: BoxDecoration(border: Border.all(), borderRadius: BorderRadius.circular(10)),
                   child: ListTile(
                     title: Text(_notes[index].description),
-                    trailing: FlatButton(
-                      child: Icon(Icons.delete),
-                      onPressed: (){
-                        Database().deleteRoomNote(_notes[index].id);
-                        setState(() { _roomIsModified = true; });
-                      },
+                    trailing: Container(
+                      width: 50,
+                      child: FlatButton(
+                        child: Icon(Icons.delete),
+                        onPressed: (){
+                          Database().deleteRoomNote(_notes[index].id);
+                          setState(() { _roomIsModified = true; });
+                        },
+                      ),
                     ),
                   )
                 );

@@ -51,83 +51,110 @@ class _ProjectDetailState extends State<ProjectDetail> {
             ),
             Flexible(
                 flex: 3,
-                child: Container(
-                    margin: EdgeInsets.all(3),
-                    decoration: BoxDecoration(border: Border.all(width: 1.2), borderRadius: BorderRadius.circular(10)),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        ListTile(
-                          dense: true,
-                          title: Row(
-                              children:[
-                                Text(
-                                    'Customer Name:',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w400,
-                                      decoration: TextDecoration.underline,
-                                    )
-                                ),
-                                Padding(padding: EdgeInsets.symmetric(horizontal: 3)),
-                                Text(
-                                    _project.clientName,
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w400,
-                                    )
-                                ),
-                              ]
+                child: SingleChildScrollView(
+                  child: Container(
+                      margin: EdgeInsets.all(3),
+                      decoration: BoxDecoration(border: Border.all(width: 1.2), borderRadius: BorderRadius.circular(10)),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Container(
+                            margin: EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                            child: Row(
+                                children:[
+                                  Text(
+                                      'Customer Name:',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w400,
+                                        decoration: TextDecoration.underline,
+                                      )
+                                  ),
+                                  Padding(padding: EdgeInsets.symmetric(horizontal: 3)),
+                                  Text(
+                                      _project.clientName,
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w400,
+                                      )
+                                  ),
+                                ]
+                            ),
                           ),
-                        ),
-                        ListTile(
-                          dense: true,
-                          title: Row(
-                              children:[
-                                Text(
-                                    'Address:',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w400,
-                                      decoration: TextDecoration.underline,
-                                    )
-                                ),
-                                Padding(padding: EdgeInsets.symmetric(horizontal: 3)),
-                                Text(
-                                    _project.clientAddress,
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w400,
-                                    )
-                                ),
-                              ]
+                          Container(
+                            margin: EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                            child: Row(
+                                children:[
+                                  Text(
+                                      'Address:',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w400,
+                                        decoration: TextDecoration.underline,
+                                      )
+                                  ),
+                                  Padding(padding: EdgeInsets.symmetric(horizontal: 3)),
+                                  Text(
+                                      _project.clientAddress,
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w400,
+                                      )
+                                  ),
+                                ]
+                            ),
                           ),
-                        ),
-                        ListTile(
-                          dense: true,
-                          title: Row(
-                              children:[
-                                Text(
-                                    'Description:',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w400,
-                                      decoration: TextDecoration.underline,
-                                    )
-                                ),
-                                Padding(padding: EdgeInsets.symmetric(horizontal: 3)),
-                                Text(
-                                    _project.description,
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w400,
-                                    )
-                                ),
-                              ]
+                          Container(
+                            margin: EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                            child: Row(
+                                children:[
+                                  Text(
+                                      'Description:',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w400,
+                                        decoration: TextDecoration.underline,
+                                      )
+                                  ),
+                                  Padding(padding: EdgeInsets.symmetric(horizontal: 3)),
+                                  Text(
+                                      _project.description,
+                                      maxLines: 3,
+                                      softWrap: true,
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w400,
+                                      )
+                                  ),
+                                ]
+                            ),
                           ),
-                        ),
-                      ],
-                    )
+                          Container(
+                            margin: EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                            child: Row(
+                                children:[
+                                  Text(
+                                      'Status:',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w400,
+                                        decoration: TextDecoration.underline,
+                                      )
+                                  ),
+                                  Padding(padding: EdgeInsets.symmetric(horizontal: 3)),
+                                  Text(
+                                      _project.status,
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w400,
+                                      )
+                                  ),
+                                ]
+                            ),
+                          ),
+                        ],
+                      )
+                  )
                 )
           ),
           Flexible(

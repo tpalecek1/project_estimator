@@ -26,7 +26,8 @@ class EditProject extends StatefulWidget{
 
 class _EditProjectState extends State<EditProject> {
   final formKey = GlobalKey<FormState>();
-
+  
+  String _dropdownValue;
   bool _isProcessing = false;
   bool _hasInvalidInput = false;
   bool _projectIsModified = false;  // true when new (or edited) project note(s), room(s), room note(s) and/or room photo(s) (when project related entities/sub-collections are modified)
@@ -43,6 +44,7 @@ class _EditProjectState extends State<EditProject> {
     _project = widget.project;
     if (_project.id != null) {
       _projectInitialState = Project.fromProject(_project);
+      _dropdownValue = _project.status;
       _listenForRooms();
     }
   }
@@ -88,7 +90,7 @@ class _EditProjectState extends State<EditProject> {
                   if (_project != _projectInitialState) {
                     Database().updateProject(_project);
                   }
-                  Navigator.of(context).pop();
+                  Navigator.of(context).pop(setState((){}));
                 }
 
               }
@@ -151,10 +153,36 @@ class _EditProjectState extends State<EditProject> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  Text(
-                    'Project Description',
-                    style: Theme.of(context).textTheme.display1,
-                    textAlign: TextAlign.left,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Project Description',
+                        style: Theme.of(context).textTheme.display1,
+                        textAlign: TextAlign.left,
+                      ),
+                      DropdownButton<String>(
+                        value: _dropdownValue,
+                        icon: Icon(Icons.arrow_drop_down),
+                        iconSize: 20,
+                        underline: Container(
+                          height: 2,
+                          color: Colors.grey,
+                        ),
+                        items: <String>['not bid', 'bid', 'not awarded', 'awarded', 'started', 'complete'].map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (String newValue){
+                          _project.status = newValue;
+                          setState(() {
+                            _dropdownValue = newValue;
+                          });
+                        },
+                      ),
+                    ]
                   ),
                   Container(
                     padding: EdgeInsets.all(5),
@@ -293,13 +321,62 @@ class _EditProjectState extends State<EditProject> {
                   decoration: BoxDecoration(border: Border.all(), borderRadius: BorderRadius.circular(10)),
                   child: ListTile(
                     title: Text(_rooms[index].name),
-                    trailing: Icon(Icons.edit),
-                    onTap: () => {
-                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => EditRoom(room: _rooms[index])))
-                        .then((roomIsModified) {
-                          setState(() { _projectIsModified = roomIsModified; });
-                        })
-                    },
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 50,
+                          child: FlatButton(
+                            child: Icon(Icons.edit),
+                            onPressed: () => {
+                            Navigator.of(context).push(MaterialPageRoute(builder: (context) => EditRoom(room: _rooms[index])))
+                              .then((roomIsModified) {
+                                setState(() { _projectIsModified = roomIsModified; });
+                              })
+                          },
+                          ),
+                        ),
+                        Container(
+                          width: 50,
+                          child: FlatButton(
+                            child: Icon(Icons.delete),
+                            onPressed: () => {
+                              showDialog(context: context,
+                                builder: (context){
+                                  return AlertDialog(
+                                    title: Text("Are you sure you want to permanently delete this room?"),
+                                    content: Text("Note: this cannot be undone"),
+                                    actions: [
+                                      FlatButton(
+                                        onPressed: (){
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: Icon(Icons.cancel),
+                                      ),
+                                      FlatButton(
+                                        onPressed: (){
+                                          Database().deleteRoom(_rooms[index].id);
+                                          _rooms.removeAt(index);
+                                          setState((){});
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: Icon(Icons.check),
+                                      )
+                                    ],
+                                  );
+                                }
+                              )
+                            },
+                          ),
+                        ),
+                      ]
+                    ),
+                    // onTap: () => {
+                    //   Navigator.of(context).push(MaterialPageRoute(builder: (context) => EditRoom(room: _rooms[index])))
+                    //     .then((roomIsModified) {
+                    //       setState(() { _projectIsModified = roomIsModified; });
+                    //     })
+                    // },
                   )
                 );
               }),
