@@ -45,8 +45,8 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
             context: context,
             builder: (context) {
               return AlertDialog(
-                title: Text('Title...'),
-                content: Text('Automatic estimate?...'),
+                title: Text('Project Estimate is empty'),
+                content: Text('Would you like to generate one?'),
                 actions: <Widget>[
                   FlatButton(
                     child: Text('No'),
