@@ -1,21 +1,59 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:project_estimator/models/paint_settings.dart';
 import 'package:project_estimator/models/user.dart';
 import 'package:project_estimator/services/auth.dart';
 import 'package:project_estimator/screens/signup_login.dart';
+import 'package:project_estimator/services/permission_manager.dart';
 
 String temp = 'https://firebasestorage.googleapis.com/v0/b/wasteagram-18a5f.appspot.com/o/2020-03-17%2005%3A24%3A38.249222?alt=media&token=514559cf-ad73-4692-8d22-7568a0f26089';
 //todo: reduce duplicate code that upadte values throught firebase
-class UserSetting extends StatelessWidget {
+class UserSetting extends StatefulWidget {
 
   static const routeName = 'user_setting';
+
+  @override
+  _UserSettingState createState() => _UserSettingState();
+}
+
+class _UserSettingState extends State<UserSetting> {
   final _auth = Auth();
+  File image;
+  BuildContext dialogContext;
+
+  void getImage() async {
+    if(await PermissionManager.checkAndRequestStoragePermissions()) {
+      showDialog( //progress hud I mentioned earlier, feel good
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          dialogContext = context;
+          return Center(child: CircularProgressIndicator());
+      });
+      image = await ImagePicker.pickImage(source: ImageSource.gallery);
+      //-----------FirebaseStorage code reference from CS492------------------//
+      // StorageReference storageReference =
+      // FirebaseStorage.instance.ref().child(DateTime.now().toString());
+      // StorageUploadTask uploadTask = storageReference.putFile(image);
+      // await uploadTask.onComplete;
+      // final url = await storageReference.getDownloadURL();
+      //----------------------------------------------------------------------//
+      //---imitate backend process time for the image--------------------------//
+      await Future.delayed(Duration(seconds: 1), () {
+         Navigator.of(dialogContext).pop(); //pop out the progress hud
+      });
+      //-----------------------------------------------------------------------//
+      setState(() {});
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     //get faked data
     User user = User(name: 'John Alpha', company: 'Big A', address: '1222 Pixley Pkwy, Lodi, CA 95240', phoneNumber: '4089514338', licenseNumber: 'A123456789');
     PaintSettings paintSettings = PaintSettings();
+
     return Scaffold(
       appBar: AppBar(
         title: Text('User Settings'),
@@ -39,16 +77,21 @@ class UserSetting extends StatelessWidget {
                   children: [
                     Center(
                       child: CircleAvatar(
-                          backgroundColor: Colors.transparent,
-                          radius: 50.0,
-                          backgroundImage: NetworkImage(temp),
-                        ),
+                        backgroundColor: Colors.blue,
+                        radius: 54.0,
+                        child: CircleAvatar(
+                            backgroundColor: Colors.white,
+                            radius: 50.0,
+                            backgroundImage: image==null? NetworkImage(temp) : FileImage(image),
+                          ),
+                      ),
                     ),
                     Positioned(
                       bottom: 5,
                       right: 10,
                       child: IconButton(icon: Icon(Icons.photo), onPressed: (){
-                        //todo: choose a pic to save and put into image
+                        //choose a pic to save and put into image
+                        getImage();
                       })
                     )
                   ]
@@ -159,53 +202,6 @@ class _PersonInfoState extends State<PersonInfo> {
       ),
     );
   }
-  //-------------delete this segment after week 8 implement-------------------------//
-  // Widget getPersonInfoRow({@required String title, @required String content}) {
-  //   return Row(
-  //     children: [
-  //       Text(title, style: Theme.of(context).textTheme.subtitle),
-  //       SizedBox(width: 5),
-  //       Expanded(child: Container(alignment: Alignment.centerRight, child: Text(content, textAlign: TextAlign.right))),
-  //       SizedBox(width: 5),
-  //       RaisedButton(onPressed: (){
-  //         _showDialog(title, content);
-  //       }, child: Text('change'))
-  //     ],
-  //   );
-  // }
-  // _showDialog(String title, String content) {
-  //   showDialog(
-  //     context: context,
-  //     builder: (context) {
-  //       return AlertDialog(
-  //         content: TextFormField(
-  //           initialValue: content,
-  //           decoration: InputDecoration(
-  //             labelText: title, border: OutlineInputBorder()
-  //           ),
-  //           onSaved: (value) {
-  //             //todo
-  //           },
-  //         ),
-  //         actions: [
-  //           FlatButton(
-  //             onPressed: (){
-  //               Navigator.of(context).pop();
-  //             }, 
-  //             child: Text('Cancel')
-  //           ),  
-  //           FlatButton(
-  //             onPressed: (){
-  //               //todo: update the data
-  //               Navigator.of(context).pop();
-  //             }, 
-  //             child: Text('Update')
-  //           ),     
-  //         ],
-  //       );
-  //     }
-  //   );
-  // }
 }
 
 class PaintSettingBox extends StatefulWidget {
