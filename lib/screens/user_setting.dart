@@ -5,6 +5,7 @@ import 'package:project_estimator/models/paint_settings.dart';
 import 'package:project_estimator/models/user.dart';
 import 'package:project_estimator/services/auth.dart';
 import 'package:project_estimator/screens/signup_login.dart';
+import 'package:project_estimator/services/dialog_manager.dart';
 import 'package:project_estimator/services/permission_manager.dart';
 
 String temp = 'https://firebasestorage.googleapis.com/v0/b/wasteagram-18a5f.appspot.com/o/2020-03-17%2005%3A24%3A38.249222?alt=media&token=514559cf-ad73-4692-8d22-7568a0f26089';
@@ -20,17 +21,11 @@ class UserSetting extends StatefulWidget {
 class _UserSettingState extends State<UserSetting> {
   final _auth = Auth();
   File image;
-  BuildContext dialogContext;
 
-  void getImage() async {
-    if(await PermissionManager.checkAndRequestStoragePermissions()) {
-      showDialog( //progress hud I mentioned earlier, feel good
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          dialogContext = context;
-          return Center(child: CircularProgressIndicator());
-      });
+  void getImage(BuildContext context) async {
+    if(await PermissionManager.checkAndRequestStoragePermissions()) { 
+      DialogManager dialogManager = DialogManager(); 
+      dialogManager.showProgressHud(context);         //progress hud I mentioned earlier, feel good
       image = await ImagePicker.pickImage(source: ImageSource.gallery);
       //-----------FirebaseStorage code reference from CS492------------------//
       // StorageReference storageReference =
@@ -41,7 +36,7 @@ class _UserSettingState extends State<UserSetting> {
       //----------------------------------------------------------------------//
       //---imitate backend process time for the image--------------------------//
       await Future.delayed(Duration(seconds: 1), () {
-         Navigator.of(dialogContext).pop(); //pop out the progress hud
+         dialogManager.closeProgressHud(); //pop out the progress hud
       });
       //-----------------------------------------------------------------------//
       setState(() {});
@@ -91,7 +86,7 @@ class _UserSettingState extends State<UserSetting> {
                       right: 10,
                       child: IconButton(icon: Icon(Icons.photo), onPressed: (){
                         //choose a pic to save and put into image
-                        getImage();
+                        getImage(context);
                       })
                     )
                   ]
