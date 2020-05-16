@@ -398,10 +398,10 @@ class _EditProjectState extends State<EditProject> {
                                         child: Icon(Icons.cancel),
                                       ),
                                       FlatButton(
-                                        onPressed: (){
+                                        onPressed: () {
                                           Database().deleteRoom(_rooms[index].id);
                                           _rooms.removeAt(index);
-                                          setState((){});
+                                          setState((){ _projectIsModified = true; });
                                           Navigator.of(context).pop();
                                         },
                                         child: Icon(Icons.check),

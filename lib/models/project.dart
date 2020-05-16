@@ -19,7 +19,7 @@ class Project {
     DateTime date,
     Estimate estimate }) {
     this.date = date ?? DateTime.now();
-    this.estimate = estimate ?? Estimate();
+    this.estimate = estimate;
   }
 
   Project.fromProject(Project project) :
@@ -31,7 +31,7 @@ class Project {
     clientAddress = project.clientAddress,
     clientPhoneNumber = project.clientPhoneNumber,
     date = DateTime(project.date.year, project.date.month, project.date.day),
-    estimate = Estimate.fromString(project.estimate.itemsToString());
+    estimate = project.estimate == null ? null : Estimate.fromString(project.estimate.itemsToString());
 
   Project.fromMap(Map<String, dynamic> map, [String projectId]) :
     id = projectId,
@@ -42,7 +42,7 @@ class Project {
     clientAddress = map['clientAddress'],
     clientPhoneNumber = map['clientPhoneNumber'],
     date = DateTime.parse(map['date']),
-    estimate = Estimate.fromString(map['estimate']);
+    estimate = map['estimate'] == null ? null : Estimate.fromString(map['estimate']);
 
   Map<String, dynamic> toMap() {
     return {
@@ -53,7 +53,7 @@ class Project {
       'clientAddress': clientAddress,
       'clientPhoneNumber': clientPhoneNumber,
       'date': dateString(),
-      'estimate': estimate.itemsToString()
+      'estimate': estimate?.itemsToString()
     };
   }
 
@@ -74,10 +74,10 @@ class Project {
       other.clientAddress == clientAddress &&
       other.clientPhoneNumber == clientPhoneNumber &&
       other.dateString() == dateString() &&
-      other.estimate.itemsToString() == estimate.itemsToString();
+      other.estimate?.itemsToString() == estimate?.itemsToString();
 
   @override
   int get hashCode => /*id.hashCode^*/name.hashCode^status.hashCode^description.hashCode^
                       clientName.hashCode^clientAddress.hashCode^clientPhoneNumber.hashCode^
-                      dateString().hashCode^estimate.itemsToString().hashCode;
+                      dateString().hashCode^estimate?.itemsToString().hashCode;
 }

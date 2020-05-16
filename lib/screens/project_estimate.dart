@@ -39,7 +39,10 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
     rooms = widget.rooms;
     estimate = project.estimate;
 
-    if(estimate.items.length == 0){ //Temporary... ask user if they want to generate an estimate
+    if (estimate == null) {
+      generateEstimate();
+    }
+    else if(estimate.items.length == 0){ //Temporary... ask user if they want to generate an estimate
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         await showDialog(
             context: context,
@@ -71,7 +74,7 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isProcessing) {
+    if (estimate == null || _isProcessing) {
       return Scaffold(
         appBar: AppBar(
             title: Text('Project Estimate')
