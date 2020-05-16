@@ -10,6 +10,7 @@ import 'package:project_estimator/services/database.dart';
 
 class ProjectList extends StatefulWidget {
   ProjectList({Key key, this.userId}) : super(key: key);
+  static const routeName = 'project_list';
   final String userId;
   @override
   _ProjectListState createState() => _ProjectListState();
