@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:project_estimator/screens/edit_room.dart';
 import 'package:project_estimator/screens/project_notes.dart';
+import 'package:project_estimator/screens/project_list.dart';
 import 'package:project_estimator/widgets/custom_button_1.dart';
 import 'package:project_estimator/widgets/new_note_dialog.dart';
 import '../models/project.dart';
@@ -149,7 +150,7 @@ class _EditProjectState extends State<EditProject> {
       child: Column(
           children: [
             Flexible(
-              flex: 7,
+              flex: 9,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
@@ -161,27 +162,46 @@ class _EditProjectState extends State<EditProject> {
                         style: Theme.of(context).textTheme.display1,
                         textAlign: TextAlign.left,
                       ),
-                      DropdownButton<String>(
-                        value: _dropdownValue,
-                        icon: Icon(Icons.arrow_drop_down),
-                        iconSize: 20,
-                        underline: Container(
-                          height: 2,
-                          color: Colors.grey,
+                      Container(
+                          height: 50,
+                          padding: EdgeInsets.all(5),
+                          child: RaisedButton(
+                            color: Color.fromARGB(25, 255, 0, 0),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                              side: BorderSide(color: Colors.red[400], width: 1.1)
+                            ),
+                            child: Text('Delete'),
+                            onPressed: () => {
+                              showDialog(context: context,
+                                builder: (context){
+                                  return AlertDialog(
+                                    title: Text("Are you sure you want to permanently delete this project?"),
+                                    content: Text("Note: this cannot be undone"),
+                                    actions: [
+                                      FlatButton(
+                                        onPressed: (){
+                                          print(widget.userId);
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: Icon(Icons.cancel),
+                                      ),
+                                      FlatButton(
+                                        onPressed: (){
+                                          Database().deleteProject(_project.id);
+                                          //setState((){});
+                                          Navigator.of(context).pop(Navigator.of(context).pop(Navigator.of(context).pop(setState((){}))));
+                                          //Navigator.of(context).push(MaterialPageRoute(builder: (context) => ProjectList(userId: widget.userId)));
+                                        },
+                                        child: Icon(Icons.check),
+                                      )
+                                    ],
+                                  );
+                                }
+                              )
+                            },
+                          ),
                         ),
-                        items: <String>['not bid', 'bid', 'not awarded', 'awarded', 'started', 'complete'].map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                        onChanged: (String newValue){
-                          _project.status = newValue;
-                          setState(() {
-                            _dropdownValue = newValue;
-                          });
-                        },
-                      ),
                     ]
                   ),
                   Container(
@@ -238,7 +258,31 @@ class _EditProjectState extends State<EditProject> {
                       validator: (description) => null,
                     ),
                   ),
-                ],)
+                  Container(
+                    height: 46,
+                    padding: EdgeInsets.all(5),
+                    child: DropdownButtonFormField(
+                      items: <String>['not bid', 'bid', 'not awarded', 'awarded', 'started', 'complete'].map<DropdownMenuItem<String>>((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          }).toList(),
+                          onChanged: (newValue){
+                            _project.status = newValue;
+                            setState(() {
+                              _dropdownValue = newValue;
+                            });
+                          },
+                        value: _dropdownValue,
+                        decoration: InputDecoration(
+                          labelText: 'Status',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+                        ),
+                    ),
+                  ),
+                ],),
             ),
             Flexible(
               flex: 2,
