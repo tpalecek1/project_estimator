@@ -7,6 +7,7 @@
  */
 
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:project_estimator/services/auth.dart';
 import 'package:project_estimator/screens/signup_login.dart';
@@ -18,12 +19,20 @@ class SplashScreen extends StatefulWidget {
   _SplashScreenState createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
   final _auth = Auth();
+  Animation _logoAnimation;
+  AnimationController _logoAnimationController; 
   
   @override
   void initState() {
     super.initState();
+
+    //animation for fun
+    _logoAnimationController = AnimationController(vsync: this, duration: Duration(milliseconds: 2500)); 
+    _logoAnimation = Tween(begin: 0.0, end: pi).animate(CurvedAnimation(
+        curve: Curves.bounceOut, parent: _logoAnimationController));
+
     prepareWork()
     .then((user) {
       if (user != null) {
@@ -39,6 +48,12 @@ class _SplashScreenState extends State<SplashScreen> {
         );
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _logoAnimationController?.dispose(); //?. null safe guard
+    super.dispose();
   }
 
   Future prepareWork () async {
@@ -67,11 +82,26 @@ class _SplashScreenState extends State<SplashScreen> {
                     Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        CircleAvatar(
-                          backgroundColor: Colors.blue[100],
-                          radius: 50.0,
-                          child: SizedBox(child: Image.asset('assets/images/logo.png'), width: 100, height: 100)
-                        ),
+                        GestureDetector(
+                          onTap: (){
+                            _logoAnimationController.isCompleted
+                            ? _logoAnimationController.reverse()
+                            : _logoAnimationController.forward();
+                          },
+                          child: AnimatedBuilder(
+                            animation: _logoAnimationController,
+                            builder: (context, child){
+                              return Transform.rotate(
+                                angle: _logoAnimation.value,
+                                child: CircleAvatar(
+                                  backgroundColor: Colors.blue[100],
+                                  radius: 50,
+                                  child: Image.asset('assets/images/logo.png', fit: BoxFit.cover)
+                                ),
+                              );
+                            },
+                          ),
+                        ),   
                         SizedBox(height: 10),
                         Text(
                           'Construction Estimator',
