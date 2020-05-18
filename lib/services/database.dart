@@ -31,6 +31,7 @@ abstract class DatabaseInterface {
   // users
   Future<void> createUser(User user);
   Future<User> readUser(String userId);
+  Stream<User> readUserRealTime(String userId);
   //Future<List<User>> readUsers();
   Future<void> updateUser(User user);
   Future<void> deleteUser(String userId);
@@ -105,6 +106,31 @@ class Database implements DatabaseInterface {
     }
 
     return doc.exists ? User.fromMap(doc.data, doc.documentID) : null;
+  }
+
+  Stream<User> readUserRealTime(String userId) {
+    StreamController<User> userStreamCtl;
+    StreamSubscription userStreamSub;
+
+    void listenForUser() {
+      userStreamSub = _db.collection(users).document(userId).snapshots().listen((snapshot) {
+        if (snapshot.exists) {
+          userStreamCtl.add(User.fromMap(snapshot.data, snapshot.documentID));
+        }
+      });
+    }
+
+    void stopListeningForUser() {
+      userStreamSub.cancel();
+      userStreamCtl.close();
+    }
+
+    userStreamCtl = StreamController<User>.broadcast(
+        onListen: listenForUser,
+        onCancel: stopListeningForUser
+    );
+
+    return userStreamCtl.stream;
   }
 
   Future<void> updateUser(User user) async {

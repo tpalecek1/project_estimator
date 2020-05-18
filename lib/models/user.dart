@@ -2,11 +2,12 @@ import 'package:project_estimator/models/paint_settings.dart';
 
 class User {
   final String id;
-  String name, company, address, phoneNumber, licenseNumber;
+  String avatar, name, company, address, phoneNumber, licenseNumber;
   PaintSettings paintSettings;
 
   User({
     this.id,
+    this.avatar = "",
     this.name = "",
     this.company = "",
     this.address = "",
@@ -16,8 +17,19 @@ class User {
     this.paintSettings = paintSettings ?? PaintSettings();
   }
 
+  User.fromUser(User user) :
+    id = user.id,
+    avatar = user.avatar,
+    name = user.name,
+    company = user.company,
+    address = user.address,
+    phoneNumber = user.phoneNumber,
+    licenseNumber = user.licenseNumber,
+    paintSettings = PaintSettings.fromMap(user.paintSettings.toMap());
+
   User.fromMap(Map<String, dynamic> map, String userId) :
     id = userId,
+    avatar = map['avatar'],
     name = map['name'],
     company = map['company'],
     address = map['address'],
@@ -27,6 +39,7 @@ class User {
 
   Map<String, dynamic> toMap() {
     return {
+      'avatar': avatar,
       'name': name,
       'company': company,
       'address': address,
@@ -41,6 +54,7 @@ class User {
   bool operator==(Object other) =>
       other is User &&
       other.id == id &&
+      other.avatar == avatar &&
       other.name == name &&
       other.company == company &&
       other.address == address &&
@@ -49,6 +63,6 @@ class User {
       other.paintSettings == paintSettings;
 
   @override
-  int get hashCode => id.hashCode^name.hashCode^company.hashCode^address.hashCode^
+  int get hashCode => id.hashCode^avatar.hashCode^name.hashCode^company.hashCode^address.hashCode^
                       phoneNumber.hashCode^licenseNumber.hashCode^paintSettings.hashCode;
 }

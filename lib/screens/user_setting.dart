@@ -1,128 +1,137 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:project_estimator/models/paint_settings.dart';
 import 'package:project_estimator/models/user.dart';
 import 'package:project_estimator/services/auth.dart';
 import 'package:project_estimator/screens/signup_login.dart';
 import 'package:project_estimator/services/dialog_manager.dart';
 import 'package:project_estimator/services/permission_manager.dart';
+import 'package:project_estimator/services/database.dart';
+import 'package:project_estimator/services/storage.dart';
 
 String temp = 'https://firebasestorage.googleapis.com/v0/b/wasteagram-18a5f.appspot.com/o/2020-03-17%2005%3A24%3A38.249222?alt=media&token=514559cf-ad73-4692-8d22-7568a0f26089';
 //todo: reduce duplicate code that upadte values throught firebase
 class UserSetting extends StatefulWidget {
-
+  UserSetting({Key key, this.userId}) : super(key: key);
   static const routeName = 'user_setting';
+  final String userId;
 
   @override
   _UserSettingState createState() => _UserSettingState();
 }
 
 class _UserSettingState extends State<UserSetting> {
-  final _auth = Auth();
   File image;
 
+  User _user;
+  User _userState;
+  StreamSubscription<User> _userStreamSubscription;
+
   void getImage(BuildContext context) async {
-    if(await PermissionManager.checkAndRequestStoragePermissions()) { 
+    if(await PermissionManager.checkAndRequestStoragePermissions()) {
       DialogManager dialogManager = DialogManager(); 
       dialogManager.showProgressHud(context);         //progress hud I mentioned earlier, feel good
+
       image = await ImagePicker.pickImage(source: ImageSource.gallery);
-      //-----------FirebaseStorage code reference from CS492------------------//
-      // StorageReference storageReference =
-      // FirebaseStorage.instance.ref().child(DateTime.now().toString());
-      // StorageUploadTask uploadTask = storageReference.putFile(image);
-      // await uploadTask.onComplete;
-      // final url = await storageReference.getDownloadURL();
-      //----------------------------------------------------------------------//
-      //---imitate backend process time for the image--------------------------//
-      await Future.delayed(Duration(seconds: 1), () {
-         dialogManager.closeProgressHud(); //pop out the progress hud
-      });
-      //-----------------------------------------------------------------------//
-      setState(() {});
+
+      if (image != null) {
+        if (_user.avatar != '') {
+          await Storage().deleteAvatar(_user.avatar);
+        }
+        _user.avatar = await Storage().uploadAvatar(image);
+        await Database().updateUser(_user);
+      }
+
+      dialogManager.closeProgressHud(); //pop out the progress hud
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    //get faked data
-    User user = User(name: 'John Alpha', company: 'Big A', address: '1222 Pixley Pkwy, Lodi, CA 95240', phoneNumber: '4089514338', licenseNumber: 'A123456789');
-    PaintSettings paintSettings = PaintSettings();
+  void initState() {
+    super.initState();
 
+    _listenForUser();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('User Settings'),
-        actions: [
-          FlatButton(
-            onPressed: (){
-              showLogoutDialog(context);
-            }, 
-            child: Text('Logout', style: TextStyle(fontSize: 17.0, color: Colors.white))
-          )
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ConstrainedBox(
-                child: Stack(
-                  children: [
-                    Center(
-                      child: CircleAvatar(
-                        backgroundColor: Colors.blue,
-                        radius: 54.0,
-                        child: CircleAvatar(
-                            backgroundColor: Colors.white,
-                            radius: 50.0,
-                            backgroundImage: image==null? NetworkImage(temp) : FileImage(image),
-                          ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 5,
-                      right: 10,
-                      child: IconButton(icon: Icon(Icons.photo), onPressed: (){
-                        //choose a pic to save and put into image
-                        getImage(context);
-                      })
-                    )
-                  ]
-                ), constraints: BoxConstraints.expand(height: 150),
-              ),
-              Text('Personal Information', style: Theme.of(context).textTheme.title),
-              Container(
-                width: double.infinity,
-                child: Card(
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    side: BorderSide(color: Colors.blueAccent, width: 3),
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  margin: EdgeInsets.fromLTRB(0, 4, 0, 4), 
-                  child: PersonInfo(user: user) 
-                ),
-              ),
-              SizedBox(height: 20),
-              Text('Paint Settings', style: Theme.of(context).textTheme.title),
-              Container(
-                width: double.infinity,
-                child: Card(
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    side: BorderSide(color: Colors.blueAccent, width: 3),
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  margin: EdgeInsets.fromLTRB(0, 4, 0, 4), 
-                  child: PaintSettingBox(paintSettings: paintSettings) 
-                ),
-              ),
-            ]
-          ),
+        appBar: AppBar(
+          title: Text('User Settings'),
+          actions: [
+            FlatButton(
+                onPressed: (){
+                  showLogoutDialog(context);
+                },
+                child: Text('Logout', style: TextStyle(fontSize: 17.0, color: Colors.white))
+            )
+          ],
         ),
-      )
+        body: _user == null ?
+        Center(child: CircularProgressIndicator()) :
+        SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ConstrainedBox(
+                    child: Stack(
+                        children: [
+                          Center(
+                            child: CircleAvatar(
+                              backgroundColor: Colors.blue,
+                              radius: 54.0,
+                              child: CircleAvatar(
+                                backgroundColor: Colors.white,
+                                radius: 50.0,
+                                backgroundImage: _user.avatar==''? NetworkImage(temp) : NetworkImage(_user.avatar),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                              bottom: 5,
+                              right: 10,
+                              child: IconButton(icon: Icon(Icons.photo), onPressed: (){
+                                //choose a pic to save and put into image
+                                getImage(context);
+                              })
+                          )
+                        ]
+                    ), constraints: BoxConstraints.expand(height: 150),
+                  ),
+                  Text('Personal Information', style: Theme.of(context).textTheme.title),
+                  Container(
+                    width: double.infinity,
+                    child: Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          side: BorderSide(color: Colors.blueAccent, width: 3),
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        margin: EdgeInsets.fromLTRB(0, 4, 0, 4),
+                        child: PersonInfo(user: _user, userState: _userState)
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  Text('Paint Settings', style: Theme.of(context).textTheme.title),
+                  Container(
+                    width: double.infinity,
+                    child: Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          side: BorderSide(color: Colors.blueAccent, width: 3),
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        margin: EdgeInsets.fromLTRB(0, 4, 0, 4),
+                        child: PaintSettingBox(user: _user, userState: _userState)
+                    ),
+                  ),
+                ]
+            ),
+          ),
+        )
     );
   }
 
@@ -152,16 +161,29 @@ class _UserSettingState extends State<UserSetting> {
   }
 
   void logout(BuildContext context) async {
-    await _auth.signOut();
+    await Auth().signOut();
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (ctx) => SignupLogin()), (_) => false
     );   
+  }
+
+  void _listenForUser() {
+    _userStreamSubscription = Database().readUserRealTime(widget.userId).listen((user) {
+      setState(() { _user = user; _userState = User.fromUser(user); });
+    });
+  }
+
+  @override
+  void dispose() {
+    _userStreamSubscription.cancel();
+    super.dispose();
   }
 }
 
 class PersonInfo extends StatefulWidget {
   final User user;
-  PersonInfo({Key key, @required this.user}):super(key: key);
+  final User userState;
+  PersonInfo({Key key, @required this.user, @required this.userState}):super(key: key);
 
   @override
   _PersonInfoState createState() => _PersonInfoState();
@@ -175,23 +197,38 @@ class _PersonInfoState extends State<PersonInfo> {
       child: Column(
         children: [
           SettingRow(title: "Name", content: widget.user.name, updateAction: (value){
-            //todo: define update action
+            widget.user.name = value;
+            if (widget.user != widget.userState) {
+              Database().updateUser(widget.user);
+            }
           }),
           Divider(),
           SettingRow(title: "Company", content: widget.user.company, updateAction: (value){
-            //todo: define update action
+            widget.user.company = value;
+            if (widget.user != widget.userState) {
+              Database().updateUser(widget.user);
+            }
           }),
           Divider(),
           SettingRow(title: "Address", content: widget.user.address, updateAction: (value){
-            //todo: define update action
+            widget.user.address = value;
+            if (widget.user != widget.userState) {
+              Database().updateUser(widget.user);
+            }
           }),
           Divider(),
           SettingRow(title: "Phone Number", content: widget.user.phoneNumber, updateAction: (value){
-            //todo: define update action
+            widget.user.phoneNumber = value;
+            if (widget.user != widget.userState) {
+              Database().updateUser(widget.user);
+            }
           }),
           Divider(),
           SettingRow(title: "License number", content: widget.user.licenseNumber, updateAction: (value){
-            //todo: define update action
+            widget.user.licenseNumber = value;
+            if (widget.user != widget.userState) {
+              Database().updateUser(widget.user);
+            }
           }),
         ],
       ),
@@ -200,8 +237,9 @@ class _PersonInfoState extends State<PersonInfo> {
 }
 
 class PaintSettingBox extends StatefulWidget {
-  final PaintSettings paintSettings;
-  PaintSettingBox({Key key, @required this.paintSettings}):super(key: key);
+  final User user;
+  final User userState;
+  PaintSettingBox({Key key, @required this.user, @required this.userState}) : super(key: key);
 
   @override
   _PaintSettingBoxState createState() => _PaintSettingBoxState();
@@ -214,44 +252,94 @@ class _PaintSettingBoxState extends State<PaintSettingBox> {
       padding: const EdgeInsets.all(8.0),
       child: Column(
         children: [
-          SettingRow(title: "PaintLow (\$/gallon)", content: '${widget.paintSettings.paintLow}', updateAction: (value){
-            //todo: define update action
+          SettingRow(title: "PaintLow (\$/gallon)", content: '${widget.user.paintSettings.paintLow}', updateAction: (value){
+            if (double.tryParse(value) != null) {
+              widget.user.paintSettings.paintLow = double.parse(value);
+              if (widget.user != widget.userState) {
+                Database().updateUser(widget.user);
+              }
+            }
           }),
           Divider(),
-          SettingRow(title: "PaintMid (\$/gallon)", content: '${widget.paintSettings.paintMid}', updateAction: (value){
-            //todo: define update action
+          SettingRow(title: "PaintMid (\$/gallon)", content: '${widget.user.paintSettings.paintMid}', updateAction: (value){
+            if (double.tryParse(value) != null) {
+              widget.user.paintSettings.paintMid = double.parse(value);
+              if (widget.user != widget.userState) {
+                Database().updateUser(widget.user);
+              }
+            }
           }),
           Divider(),
-          SettingRow(title: "PaintHigh (\$/gallon)", content: '${widget.paintSettings.paintHigh}', updateAction: (value){
-            //todo: define update action
+          SettingRow(title: "PaintHigh (\$/gallon)", content: '${widget.user.paintSettings.paintHigh}', updateAction: (value){
+            if (double.tryParse(value) != null) {
+              widget.user.paintSettings.paintHigh = double.parse(value);
+              if (widget.user != widget.userState) {
+                Database().updateUser(widget.user);
+              }
+            }
           }),
           Divider(),
-          SettingRow(title: "PaintCoverage (sqft/gallon)", content: '${widget.paintSettings.paintCoverage}', updateAction: (value){
-            //todo: define update action
+          SettingRow(title: "PaintCoverage (sqft/gallon)", content: '${widget.user.paintSettings.paintCoverage}', updateAction: (value){
+            if (double.tryParse(value) != null) {
+              widget.user.paintSettings.paintCoverage = double.parse(value);
+              if (widget.user != widget.userState) {
+                Database().updateUser(widget.user);
+              }
+            }
           }),
           Divider(),
-          SettingRow(title: "ProductionRate (\$/hour)", content: '${widget.paintSettings.productionRate}', updateAction: (value){
-            //todo: define update action
+          SettingRow(title: "ProductionRate (sqft/hour)", content: '${widget.user.paintSettings.productionRate}', updateAction: (value){
+            if (double.tryParse(value) != null) {
+              widget.user.paintSettings.productionRate = double.parse(value);
+              if (widget.user != widget.userState) {
+                Database().updateUser(widget.user);
+              }
+            }
           }),
           Divider(),
-          SettingRow(title: "LaborRate (sqft/hour)", content: '${widget.paintSettings.laborRate}', updateAction: (value){
-            //todo: define update action
+          SettingRow(title: "LaborRate (\$/hour)", content: '${widget.user.paintSettings.laborRate}', updateAction: (value){
+            if (double.tryParse(value) != null) {
+              widget.user.paintSettings.laborRate = double.parse(value);
+              if (widget.user != widget.userState) {
+                Database().updateUser(widget.user);
+              }
+            }
           }),
           Divider(),
-          SettingRow(title: "DoorCost (\$)", content: '${widget.paintSettings.doorCost}', updateAction: (value){
-            //todo: define update action
+          SettingRow(title: "DoorCost (\$)", content: '${widget.user.paintSettings.doorCost}', updateAction: (value){
+            if (double.tryParse(value) != null) {
+              widget.user.paintSettings.doorCost = double.parse(value);
+              if (widget.user != widget.userState) {
+                Database().updateUser(widget.user);
+              }
+            }
           }),
           Divider(),
-          SettingRow(title: "WindowCost(\$)", content: '${widget.paintSettings.windowCost}', updateAction: (value){
-            //todo: define update action
+          SettingRow(title: "WindowCost(\$)", content: '${widget.user.paintSettings.windowCost}', updateAction: (value){
+            if (double.tryParse(value) != null) {
+              widget.user.paintSettings.windowCost = double.parse(value);
+              if (widget.user != widget.userState) {
+                Database().updateUser(widget.user);
+              }
+            }
           }),
           Divider(),
-          SettingRow(title: "AccentWallCost (\$)", content: '${widget.paintSettings.accentWallCost}', updateAction: (value){
-            //todo: define update action
+          SettingRow(title: "AccentWallCost (\$)", content: '${widget.user.paintSettings.accentWallCost}', updateAction: (value){
+            if (double.tryParse(value) != null) {
+              widget.user.paintSettings.accentWallCost = double.parse(value);
+              if (widget.user != widget.userState) {
+                Database().updateUser(widget.user);
+              }
+            }
           }),
           Divider(),
-          SettingRow(title: "Trim (\$/linear ft)", content: '${widget.paintSettings.trim}', updateAction: (value){
-            //todo: define update action
+          SettingRow(title: "Trim (\$/linear ft)", content: '${widget.user.paintSettings.trim}', updateAction: (value){
+            if (double.tryParse(value) != null) {
+              widget.user.paintSettings.trim = double.parse(value);
+              if (widget.user != widget.userState) {
+                Database().updateUser(widget.user);
+              }
+            }
           }),
         ],
       ),
@@ -272,12 +360,7 @@ class SettingRow extends StatefulWidget {
 class _SettingRowState extends State<SettingRow> {
 
   // Create a text controller and use it to retrieve the current value of the TextField.
-  TextEditingController _myController;
-  @override
-  void initState() {
-    _myController = TextEditingController(text: widget.content); //widget.content can not used before initstate()
-    super.initState();
-  }
+  TextEditingController _myController = TextEditingController();
 
   @override
   void dispose() {
@@ -305,10 +388,10 @@ class _SettingRowState extends State<SettingRow> {
     showDialog(
       context: context,
       builder: (context) {
+        _myController.text = content;
         return AlertDialog(
           content: TextFormField(
             controller: _myController,
-            //initialValue: content,    //note: initialValue and controller can not be used at the same time
             decoration: InputDecoration(
               labelText: title, border: OutlineInputBorder()
             )
@@ -322,8 +405,6 @@ class _SettingRowState extends State<SettingRow> {
             ),  
             FlatButton(
               onPressed: (){
-                //todo upate the data
-                  //print(_myController.text);  //test only
                 widget.updateAction(_myController.text);
                 Navigator.of(context).pop();
               }, 

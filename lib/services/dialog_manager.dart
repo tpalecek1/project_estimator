@@ -10,7 +10,10 @@ class DialogManager {
       barrierDismissible: false,
       builder: (BuildContext context) {
         _progressHudContext = context;
-        return Center(child: CircularProgressIndicator());
+        return WillPopScope(
+          onWillPop: () async => false,   // disable Android system "back" button
+          child: Center(child: CircularProgressIndicator()),
+        );
     });
   }
 
