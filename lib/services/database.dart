@@ -259,7 +259,20 @@ class Database implements DatabaseInterface {
   Future<void> deleteProject(String projectId) async {
     try {
       //await _db.document(projectId).delete();
-      await _recursiveDelete.call({ 'path': projectId });
+      //await _recursiveDelete.call({ 'path': projectId });
+      List<Room> rooms = await readRooms(projectId);
+      await Future.forEach(rooms, (room) async {
+        List<RoomNote> roomNotes = await readRoomNotes(room.id);
+        await Future.forEach(roomNotes, (note) async {
+          await deleteRoomNote(note.id);
+        });
+        deleteRoom(room.id);
+      });
+      List<ProjectNote> projectNotes = await readProjectNotes(projectId);
+      await Future.forEach(projectNotes, (note) async {
+        await deleteProjectNote(note.id);
+      });
+      await _db.document(projectId).delete();
     }
     catch (error) {
       rethrow;
@@ -451,7 +464,12 @@ class Database implements DatabaseInterface {
   Future<void> deleteRoom(String roomId) async {
     try {
       //await _db.document(roomId).delete();
-      await _recursiveDelete.call({ 'path': roomId });
+      //await _recursiveDelete.call({ 'path': roomId });
+      List<RoomNote> roomNotes = await readRoomNotes(roomId);
+      await Future.forEach(roomNotes, (note) async {
+        await deleteRoomNote(note.id);
+      });
+      await _db.document(roomId).delete();
     }
     catch (error) {
       rethrow;

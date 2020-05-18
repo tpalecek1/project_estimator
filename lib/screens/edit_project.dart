@@ -53,7 +53,7 @@ class _EditProjectState extends State<EditProject> {
   @override 
   Widget build(BuildContext context){
     return WillPopScope(
-      onWillPop: () async => _projectIsModified ? false : true,   // disable Android system "back" button (when project is modified)
+      onWillPop: () async => _projectIsModified || _isProcessing ? false : true,   // disable Android system "back" button (when project is modified, or being created or deleted)
       child: Scaffold(
         resizeToAvoidBottomInset: false, //Changes keyboard to an overlay instead of pushing the screen up
         appBar: AppBar(
@@ -174,24 +174,23 @@ class _EditProjectState extends State<EditProject> {
                             child: Text('Delete'),
                             onPressed: () => {
                               showDialog(context: context,
-                                builder: (context){
+                                builder: (ctx){
                                   return AlertDialog(
                                     title: Text("Are you sure you want to permanently delete this project?"),
                                     content: Text("Note: this cannot be undone"),
                                     actions: [
                                       FlatButton(
                                         onPressed: (){
-                                          print(widget.userId);
-                                          Navigator.of(context).pop();
+                                          Navigator.of(ctx).pop();
                                         },
                                         child: Icon(Icons.cancel),
                                       ),
                                       FlatButton(
-                                        onPressed: (){
-                                          Database().deleteProject(_project.id);
-                                          //setState((){});
-                                          Navigator.of(context).pop(Navigator.of(context).pop(Navigator.of(context).pop(setState((){}))));
-                                          //Navigator.of(context).push(MaterialPageRoute(builder: (context) => ProjectList(userId: widget.userId)));
+                                        onPressed: () async {
+                                          Navigator.of(ctx).pop();
+                                          setState(() { _isProcessing = true; _projectIsModified = true; });
+                                          await Database().deleteProject(_project.id);
+                                          Navigator.popUntil(context, (route) => route.isFirst);
                                         },
                                         child: Icon(Icons.check),
                                       )
@@ -415,12 +414,6 @@ class _EditProjectState extends State<EditProject> {
                         ),
                       ]
                     ),
-                    // onTap: () => {
-                    //   Navigator.of(context).push(MaterialPageRoute(builder: (context) => EditRoom(room: _rooms[index])))
-                    //     .then((roomIsModified) {
-                    //       setState(() { _projectIsModified = roomIsModified; });
-                    //     })
-                    // },
                   )
                 );
               }),
