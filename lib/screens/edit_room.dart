@@ -288,14 +288,17 @@ class _EditRoomState extends State<EditRoom> {
                                     child: Container(height:30, child: const Text('Photo Gallery'), alignment: Alignment.center),
                                     onPressed: () async { 
                                       if(await PermissionManager.checkAndRequestStoragePermissions()) { 
+                                        Navigator.of(context).pop(); 
                                         image = null;
                                         image = await ImagePicker.pickImage(source: ImageSource.gallery);
                                         if(image != null)
                                           shouldShowBanner = true;
                                         //uploading the photo
                                         setState(() {});
+                                      } else {
+                                        Navigator.of(context).pop(); 
                                       }
-                                      Navigator.of(context).pop(); 
+                                      
                                     },
                                   ),
                                 ],
