@@ -53,7 +53,7 @@ class _EditProjectState extends State<EditProject> {
   @override 
   Widget build(BuildContext context){
     return WillPopScope(
-      onWillPop: () async => _projectIsModified ? false : true,   // disable Android system "back" button (when project is modified)
+      onWillPop: () async => _projectIsModified || _isProcessing ? false : true,   // disable Android system "back" button (when project is modified, or being created or deleted)
       child: Scaffold(
         resizeToAvoidBottomInset: false, //Changes keyboard to an overlay instead of pushing the screen up
         appBar: AppBar(
@@ -419,12 +419,6 @@ class _EditProjectState extends State<EditProject> {
                         ),
                       ]
                     ),
-                    // onTap: () => {
-                    //   Navigator.of(context).push(MaterialPageRoute(builder: (context) => EditRoom(room: _rooms[index])))
-                    //     .then((roomIsModified) {
-                    //       setState(() { _projectIsModified = roomIsModified; });
-                    //     })
-                    // },
                   )
                 );
               }),
