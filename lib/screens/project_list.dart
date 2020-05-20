@@ -45,7 +45,7 @@ class _ProjectListState extends State<ProjectList> {
             icon: Icon(Icons.settings),
             onPressed: () {
               FocusScope.of(context).requestFocus(FocusNode()); //to unfocus serach textField, weird way
-              Navigator.of(context).pushNamed(UserSetting.routeName);
+              Navigator.of(context).push(MaterialPageRoute(builder: (context) => UserSetting(userId: widget.userId)));
             },
           )
         ],
