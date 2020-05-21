@@ -316,10 +316,7 @@ class _EditRoomState extends State<EditRoom> {
                                             shouldShowBanner = true;
                                           //uploading the photo
                                           setState(() {});
-                                        } else {
-                                          Navigator.of(context).pop(); 
-                                        }
-                                        
+                                        }                                         
                                       },
                                     ),
                                   ],
