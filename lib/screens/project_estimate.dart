@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import '../models/estimate.dart';
 import '../models/project.dart';
 import '../models/room.dart';
@@ -7,6 +8,10 @@ import '../models/project_note.dart';
 import '../models/user.dart';
 import '../models/paint_settings.dart';
 import 'package:project_estimator/services/database.dart';
+import 'pdf_preview.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 class ProjectEstimate extends StatefulWidget {
   ProjectEstimate({Key key, this.userId, this.project, this.rooms}) : super(key: key);
@@ -30,6 +35,10 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
   PaintSettings settings;
 
   bool _isProcessing = false;
+  
+  final pdf = pw.Document();
+  String filePath;
+
 
   @override
   void initState() {
@@ -130,8 +139,15 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                         );
                       }
                   ),
-                  ListTile(leading: Icon(Icons.view_compact), title: Text("Preview", style: Theme.of(context).textTheme.subtitle, textScaleFactor: 1.1,)),
-                  ListTile(leading: Icon(Icons.file_download), title: Text("Download as PDF", style: Theme.of(context).textTheme.subtitle, textScaleFactor: 1.1,)),
+                  ListTile(
+                    leading: Icon(Icons.view_compact), 
+                    title: Text("Download as PDF", style: Theme.of(context).textTheme.subtitle, textScaleFactor: 1.1,),
+                    onTap: () {
+                      writePdf();
+                      savePdf();
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => PdfPreview(path: filePath)));
+                    },
+                  ),
                   ListTile(leading: Icon(Icons.email), title: Text("Send as email", style: Theme.of(context).textTheme.subtitle, textScaleFactor: 1.1,)),
                 ],
               )
@@ -367,6 +383,142 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
     }
 
     setState(() { _isProcessing = false; });
+  }
+  
+  void writePdf() {
+    pdf.addPage(pw.MultiPage(
+      pageFormat: PdfPageFormat.a4,
+      margin: pw.EdgeInsets.all(32),
+      header: (pw.Context context){
+        return pw.Column(
+          children: [
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Paragraph(text: "License # #####"),
+                pw.Paragraph(text: 'Page No. # of #')
+              ],
+            ),
+            pw.Align(
+              alignment: pw.Alignment.topLeft,
+              child: pw.Paragraph(text: 'Expires: xx', textAlign: pw.TextAlign.left)
+            )
+          ],
+        );
+      },
+      footer: (pw.Context context){
+        return pw.Align(alignment: pw.Alignment.bottomCenter,
+            child: pw.Container(
+              padding: pw.EdgeInsets.all(10),
+              decoration: pw.BoxDecoration(
+                border: pw.BoxBorder(
+                  top: true,
+                  bottom: true,
+                  left: true,
+                  right: true,
+                  color: PdfColor.fromRYB(1, 1, 1),
+                  width: 2,
+                )
+              ),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+                children: [
+                  pw.Paragraph(text: 'We propose hereby to furnish material and labor for the above scope of work -\n in accordance with the above specifications for the sum of \$${(estimate.subtotal() * 1.0725).toStringAsFixed(2)} '),
+                  pw.Paragraph(text: 'Any alteration or deviation from the above specifications involving extra costs will be executed only upon written order, and will become an extra charge over and above the estimate. All agreements contingent upon strikes, accidents or delays beyond control. Owner to carry fire, tornado and other necessary insurance upon above work.  Workmen\'s Compensation and public Liability Insurance on above work to be taken out by contractor. Payment in full is due within 30 days of completion of above work.'),
+                  pw.Row(
+                    children: [
+                      pw.Container(
+                        width: 50,
+                        child: pw.Paragraph(text: 'Authorized Signature'),
+                      ),
+                      pw.Expanded(
+                        child: pw.Container(
+                          decoration: pw.BoxDecoration(
+                            border: pw.BoxBorder(
+                              bottom: true,
+                              width: 1.5,
+                            )
+                          ),
+                          height: 20,
+                          child: pw.Container(),
+                        ),
+                      )
+                    ]
+                  )
+
+                ]
+              )
+            ),
+          );
+      },
+      build: (pw.Context context) {
+        return [
+          pw.Header(
+            level: 0,
+            child: pw.Align(
+              alignment: pw.Alignment.center,
+              child: pw.Text('Proposal', style: pw.TextStyle(fontSize: 36)),
+            ),
+          ),
+          pw.Table(
+
+            border: pw.TableBorder(),
+            children: [
+              pw.TableRow(
+                children: [
+                  pw.Paragraph(text: 'Submitted to', padding: pw.EdgeInsets.only(left: 3)),
+                  pw.Paragraph(text: 'Today\'s date', padding: pw.EdgeInsets.only(left: 3)), 
+                ],
+              ),
+              pw.TableRow(
+                children: [
+                  pw.Paragraph(text: 'Phone Number', padding: pw.EdgeInsets.only(left: 3)),
+                  pw.Paragraph(text: 'Job Name', padding: pw.EdgeInsets.only(left: 3)), 
+                ],
+              ),
+              pw.TableRow(
+                children: [
+                  pw.Paragraph(text: 'Project address', padding: pw.EdgeInsets.only(left: 3)),
+                  pw.Paragraph(text: 'Project Name', padding: pw.EdgeInsets.only(left: 3)), 
+                ],
+              ),
+            ],
+          ),
+          pw.Align(
+            alignment: pw.Alignment.topLeft,
+            child: pw.Paragraph(text: 'We propose hereby to furnish material and labor necessary for the completion of:')
+          ),
+          pw.Align(
+            alignment: pw.Alignment.topLeft,
+            child: pw.ListView.builder(
+              itemCount: estimate.items.length,
+              itemBuilder: (context, index){
+                  return pw.Row(
+                    children: [
+                      pw.Flexible(
+                        child:pw.Bullet(text: '${estimate.items[index].name}'),
+                      ),
+                      pw.Flexible(
+                        child: pw.Paragraph(text: '\$${estimate.items[index].cost}'),
+                        
+                      ),
+                    ]
+                  );
+              },
+            ),
+          ),
+        ];
+      },
+    ));
+  }
+
+  Future savePdf() async {
+    Directory docDir = await getApplicationDocumentsDirectory();
+    String documentPath = docDir.path;
+    filePath = "$documentPath/example1.pdf";
+    File file = File(filePath);
+
+    file.writeAsBytesSync(pdf.save());
   }
 }
 
