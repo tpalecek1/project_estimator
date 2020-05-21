@@ -297,11 +297,12 @@ class _EditRoomState extends State<EditRoom> with TickerProviderStateMixin {
                                         Navigator.of(context).pop(); 
                                         image = null;
                                         image = await ImagePicker.pickImage(source: ImageSource.camera);
-                                        //todo: uploading the photo
-                                        setState(() {});
-                                        //start animation: take the banner out
-                                        if(image != null)
+                                        if(image != null) {
+                                          //start animation: take the banner out
                                           _animationController.forward();
+                                          //todo: uploading the photo
+                                          setState(() {});
+                                        }
                                       },
                                     ),
                                     Divider(height: 1),
@@ -312,11 +313,12 @@ class _EditRoomState extends State<EditRoom> with TickerProviderStateMixin {
                                           Navigator.of(context).pop(); 
                                           image = null;
                                           image = await ImagePicker.pickImage(source: ImageSource.gallery);
-                                          //todo: uploading the photo
-                                          setState(() {});
-                                          //start animation: take the banner out
-                                          if(image != null)
+                                          if(image != null) {
+                                            //start animation: take the banner out
                                             _animationController.forward();
+                                            //todo: uploading the photo
+                                            setState(() {});
+                                          }
                                         }                                         
                                       },
                                     ),
