@@ -7,8 +7,8 @@ import '../models/room_note.dart';
 import '../models/project_note.dart';
 import '../models/user.dart';
 import '../models/paint_settings.dart';
-import 'pdf_preview.dart';
 import 'package:project_estimator/services/database.dart';
+import 'pdf_preview.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -35,9 +35,10 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
   PaintSettings settings;
 
   bool _isProcessing = false;
-
+  
   final pdf = pw.Document();
   String filePath;
+
 
   @override
   void initState() {
@@ -383,7 +384,7 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
 
     setState(() { _isProcessing = false; });
   }
-
+  
   void writePdf() {
     pdf.addPage(pw.MultiPage(
       pageFormat: PdfPageFormat.a4,
