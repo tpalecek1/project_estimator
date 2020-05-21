@@ -300,7 +300,8 @@ class _EditRoomState extends State<EditRoom> with TickerProviderStateMixin {
                                         //todo: uploading the photo
                                         setState(() {});
                                         //start animation: take the banner out
-                                        _animationController.forward();
+                                        if(image != null)
+                                          _animationController.forward();
                                       },
                                     ),
                                     Divider(height: 1),
@@ -314,7 +315,8 @@ class _EditRoomState extends State<EditRoom> with TickerProviderStateMixin {
                                           //todo: uploading the photo
                                           setState(() {});
                                           //start animation: take the banner out
-                                          _animationController.forward();
+                                          if(image != null)
+                                            _animationController.forward();
                                         }                                         
                                       },
                                     ),
