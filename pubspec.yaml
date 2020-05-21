@@ -33,9 +33,6 @@ dependencies:
   transparent_image: ^1.0.0
   image_picker: ^0.6.6+1
   permission_handler: ^5.0.0+hotfix.5
-  pdf: ^1.8.0
-  path_provider: ^1.6.8
-  flutter_full_pdf_viewer: ^1.0.6
 
 
 dev_dependencies:
