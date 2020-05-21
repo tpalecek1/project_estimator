@@ -322,6 +322,13 @@ class _EditRoomState extends State<EditRoom> with TickerProviderStateMixin {
                                         }                                         
                                       },
                                     ),
+                                    Divider(height: 1, color: Colors.blue),
+                                    SimpleDialogOption(
+                                      child: Container(height:30, child: const Text('Cancel', style: TextStyle(color: Colors.blue)), alignment: Alignment.center),
+                                      onPressed: () { 
+                                        Navigator.of(context).pop(); 
+                                      },
+                                    )                                   
                                   ],
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(15))),
                                 );
