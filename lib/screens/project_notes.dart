@@ -59,6 +59,7 @@ class _ProjectNotesState extends State<ProjectNotes> {
                       title: Text('General Notes'),
                       children: <Widget>[
                         ListView.builder(
+                          physics: ScrollPhysics(),
                           shrinkWrap: true,
                           itemCount: _projectNotes.length,
                           itemBuilder: (context, index) {
@@ -103,6 +104,7 @@ class _ProjectNotesState extends State<ProjectNotes> {
                       title: Text('Room Notes'),
                       children: <Widget>[
                         ListView.builder(
+                          physics: ScrollPhysics(),
                           shrinkWrap: true,
                           itemCount: _roomNotes.length,
                           itemBuilder: (context, roomIndex) {
@@ -119,6 +121,7 @@ class _ProjectNotesState extends State<ProjectNotes> {
                                 title: Text(_roomNotes[roomId].name),
                                 children: <Widget>[
                                   ListView.builder(
+                                    physics: ScrollPhysics(),
                                     shrinkWrap: true,
                                     itemCount: _roomNotes[roomId].notes.length,
                                     itemBuilder: (context, noteIndex) {

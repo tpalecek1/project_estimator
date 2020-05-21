@@ -24,7 +24,7 @@ class EditRoom extends StatefulWidget {
 
 
 
-class _EditRoomState extends State<EditRoom> {
+class _EditRoomState extends State<EditRoom> with TickerProviderStateMixin {
   final formKey = GlobalKey<FormState>();
 
   bool _isProcessing = false;
@@ -37,11 +37,18 @@ class _EditRoomState extends State<EditRoom> {
   StreamSubscription<List<RoomNote>> _roomNoteStreamSubscription;
 
   File image;
-  bool shouldShowBanner = false;
+
+  //animation variables
+  AnimationController _animationController;
+  Animation _sizeAnimation;
 
   @override
   void initState() { 
     super.initState();
+
+    //initialize animation variables
+    _animationController = AnimationController(vsync: this, duration: Duration(milliseconds: 300));
+    _sizeAnimation = Tween(begin: 0.0, end: 1.0).animate(_animationController);
 
     _room = widget.room;
     if (_room.id != null) {
@@ -147,6 +154,7 @@ class _EditRoomState extends State<EditRoom> {
 
   Widget _roomInfo(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
+    double bannerHeight = 60.0;
     return Stack(
       children:[
         SingleChildScrollView(
@@ -155,23 +163,14 @@ class _EditRoomState extends State<EditRoom> {
             autovalidate: _hasInvalidInput ? true : false,
             child: Column(
               children: [
-                Visibility(
-                  visible: shouldShowBanner,
-                  child: SizedBox(height:60),
-                  // child: MaterialBanner(
-                  //   contentTextStyle: TextStyle(color: Colors.white, backgroundColor: Colors.indigo),
-                  //   content: Text(
-                  //     "Uploading Picture...",
-                  //   ),
-                  //   leading: Image(image: AssetImage("assets/images/loading.gif"), height: 30,),   
-                  //   backgroundColor: Colors.indigo,
-                  //   actions: <Widget>[
-                  //     FlatButton(
-                  //       child: Text("Cancel", style: TextStyle(color: Colors.white)),
-                  //       onPressed: _hideBanner,
-                  //     ),
-                  //   ],
-                  // ),
+                AnimatedBuilder(
+                  animation: _animationController,
+                  builder: (context,index){
+                    return Container(
+                      width: screenWidth,
+                      height:60*_sizeAnimation.value
+                    );
+                  }
                 ),
                 Text(
                   'Measurements',
@@ -283,7 +282,7 @@ class _EditRoomState extends State<EditRoom> {
                       Expanded(
                         child: CustomButton1(
                           onPressed: () {
-                            //todo: Add Photo
+                            //Add Photo
                             showDialog(
                               context: context,
                               builder: (context) {
@@ -298,10 +297,10 @@ class _EditRoomState extends State<EditRoom> {
                                         Navigator.of(context).pop(); 
                                         image = null;
                                         image = await ImagePicker.pickImage(source: ImageSource.camera);
-                                        if(image != null)
-                                          shouldShowBanner = true;
-                                        //uploading the photo
+                                        //todo: uploading the photo
                                         setState(() {});
+                                        //start animation: take the banner out
+                                        _animationController.forward();
                                       },
                                     ),
                                     Divider(height: 1),
@@ -312,10 +311,10 @@ class _EditRoomState extends State<EditRoom> {
                                           Navigator.of(context).pop(); 
                                           image = null;
                                           image = await ImagePicker.pickImage(source: ImageSource.gallery);
-                                          if(image != null)
-                                            shouldShowBanner = true;
-                                          //uploading the photo
+                                          //todo: uploading the photo
                                           setState(() {});
+                                          //start animation: take the banner out
+                                          _animationController.forward();
                                         }                                         
                                       },
                                     ),
@@ -368,40 +367,32 @@ class _EditRoomState extends State<EditRoom> {
                     ]
                   )
                 ),
-                Row(
-                  children: [
-                    Container(
-                      width: screenWidth*0.66,
-                      height: 200,
-                      child: _notes == null ?
-                      Center(child: CircularProgressIndicator()) :
-                      ListView.builder(
-                        physics: ScrollPhysics(),
-                        itemCount: _notes.length,
-                        itemBuilder: (context, index){
-                        return Container(
-                          margin: EdgeInsets.fromLTRB(5, 2, MediaQuery.of(context).size.width*.05, 2),
-                          //margin: EdgeInsets.all(1),
-                          decoration: BoxDecoration(border: Border.all(), borderRadius: BorderRadius.circular(10)),
-                          child: ListTile(
-                            title: Text(_notes[index].description),
-                            trailing: Container(
-                              width: 50,
-                              child: FlatButton(
-                                child: Icon(Icons.delete),
-                                onPressed: (){
-                                  Database().deleteRoomNote(_notes[index].id);
-                                  setState(() { _roomIsModified = true; });
-                                },
-                              ),
-                            ),
-                          )
-                        );
-                      }),
-                    ),
-                    Spacer()
-                  ]
-                ),
+                _notes == null ?
+                Center(child: CircularProgressIndicator()) :
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: _notes.length,
+                  itemBuilder: (context, index){
+                  return Container(
+                    margin: EdgeInsets.fromLTRB(5, 2, MediaQuery.of(context).size.width*.25, 2),
+                    //margin: EdgeInsets.all(1),
+                    decoration: BoxDecoration(border: Border.all(), borderRadius: BorderRadius.circular(10)),
+                    child: ListTile(
+                      title: Text(_notes[index].description),
+                      trailing: Container(
+                        width: 50,
+                        child: FlatButton(
+                          child: Icon(Icons.delete),
+                          onPressed: (){
+                            Database().deleteRoomNote(_notes[index].id);
+                            setState(() { _roomIsModified = true; });
+                          },
+                        ),
+                      ),
+                    )
+                  );
+                }),
                 // Container( //test use only
                 //   width: 100,
                 //   height: 100,
@@ -411,35 +402,45 @@ class _EditRoomState extends State<EditRoom> {
             )
           ),
         ),
-        Visibility(
-          visible: shouldShowBanner,
-          child: SizedBox(
-            height: 60,
-            child: Opacity(
-              opacity: 0.90,
-              child: MaterialBanner(
-                contentTextStyle: TextStyle(color: Colors.white, backgroundColor: Colors.indigo),
-                content: Text(
-                  "Uploading Picture...",
-                ),
-                leading: Image(image: AssetImage("assets/images/loading.gif"), height: 30,),   
-                backgroundColor: Colors.indigo,
-                actions: <Widget>[
-                  FlatButton(
-                    child: Text("Cancel", style: TextStyle(color: Colors.white)),
-                    onPressed: _hideBanner,
+        AnimatedBuilder(
+          animation: _animationController,
+          builder:(context,index){ 
+            return Positioned(
+            top: -60 + _sizeAnimation.value * bannerHeight,
+            // top: -20,
+            left: 0,
+            child: SizedBox(
+              width: screenWidth,
+              height: 60,
+              child: Opacity(
+                opacity: 0.90,
+                child: MaterialBanner(
+                  contentTextStyle: TextStyle(color: Colors.white, backgroundColor: Colors.indigo),
+                  content: Text(
+                    "Uploading Picture...",
                   ),
-                ],
+                  leading: Image(image: AssetImage("assets/images/loading.gif"), height: 30,),   
+                  backgroundColor: Colors.indigo,
+                  actions: <Widget>[
+                    FlatButton(
+                      child: Text("Cancel", style: TextStyle(color: Colors.white)),
+                      onPressed: _hideBanner,
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
+          );
+          }
         ),
       ]
     );
   }
 
   void _hideBanner() {
-    setState(() => shouldShowBanner = false);
+    //reverse the animation: hide the banner out of screen
+    _animationController.reverse();
+    // setState((){});
   }
 
   void _listenForRoomNotes() {
@@ -452,6 +453,7 @@ class _EditRoomState extends State<EditRoom> {
   @override
   void dispose() {
     _roomNoteStreamSubscription?.cancel();
+    _animationController.dispose();
     super.dispose();
   }
 
