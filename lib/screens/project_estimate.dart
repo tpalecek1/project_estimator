@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:io';
 import '../models/estimate.dart';
 import '../models/project.dart';
@@ -385,8 +386,14 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
     setState(() { _isProcessing = false; });
   }
   
-  void writePdf() {
+  void writePdf() async {
+    final font = await rootBundle.load("assets/fonts/OpenSans-Regular.ttf");
+    final ttf = pw.Font.ttf(font);
+    pw.ThemeData theme = pw.Theme.withFont(
+      base: ttf,
+    );
     pdf.addPage(pw.MultiPage(
+      theme: theme,
       pageFormat: PdfPageFormat.a4,
       margin: pw.EdgeInsets.all(32),
       header: (pw.Context context){
