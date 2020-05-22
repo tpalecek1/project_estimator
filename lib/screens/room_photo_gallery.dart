@@ -76,14 +76,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
                           height: 250.0,
                           width: 250.0,
                           fit: BoxFit.cover,
-                        ),
-                        // child: FadeInImage.assetNetwork(
-                        //   placeholder: 'assets/images/loading.gif', //too big? find a way to fix later
-                        //   image: images[index],
-                        //   height: 250.0,
-                        //   width: 250.0,
-                        //   fit: BoxFit.cover,
-                        // )
+                        )
                       )
                     ),
                     Positioned(
@@ -133,16 +126,20 @@ class _GalleryScreenState extends State<GalleryScreen> {
       )
     );
   }
-  Room getRoom() {
+  Room getRoom() { //fake data
     Room room = Room();
     room.name = 'Living Room';
+    // room.name = 'bedroom';
+    // room.name = 'bathroom';
+    // room.name = 'garage';
+    // room.name = 'unknown Room';
     List<String> photos = List();
     //make faked images data in room
     photos.add('https://firebasestorage.googleapis.com/v0/b/wasteagram-18a5f.appspot.com/o/2020-04-30%2018%3A19%3A30.170261?alt=media&token=40879f95-13cf-4345-9a98-074574d30b7d');
     photos.add('https://firebasestorage.googleapis.com/v0/b/wasteagram-18a5f.appspot.com/o/2020-04-30%2018%3A18%3A51.731015?alt=media&token=e4d2be5e-cf0c-448b-bf8b-3eb250f96a74');
     photos.add('https://firebasestorage.googleapis.com/v0/b/wasteagram-18a5f.appspot.com/o/2020-04-30%2018%3A20%3A17.160801?alt=media&token=38dd7a3c-ba34-4d52-8385-bfa1247adfbf');
     photos.add('https://firebasestorage.googleapis.com/v0/b/wasteagram-18a5f.appspot.com/o/2020-03-17%2005%3A24%3A38.249222?alt=media&token=514559cf-ad73-4692-8d22-7568a0f26089');
-    photos.add('https://firebasestorage.googleapis.com/v0/b/wasteagram-18a5f.appspot.com/o/2020-04-30%2018%3A21%3A03.694362?alt=media&token=59f9d37d-0340-477f-a1fd-51012b1174e7');
+    photos.add('https://firebasestorage.googleapis.com/v0/b/wasteagram-18a5f.appspot.com/o/2020-04-30%2018%3A21%3A03.694362?alt=media&token=59f9d37d-0340-477f-a1fd-51012b1174e7'); //this image is 4600KB made on purpose to test the long loading, but we should use the image less than 100KB, otherwise the device will easily crash
     room.photos = photos;
     return room;
   }
@@ -159,11 +156,21 @@ class HeroHeader implements SliverPersistentHeaderDelegate {
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    String roomImage = 'assets/images/intro.jpg';
+    if (roomName.toLowerCase().contains('living')) {
+      roomImage = 'assets/images/living_room.jpg';
+    } else if (roomName.toLowerCase().contains('bed')) {
+      roomImage = 'assets/images/bedroom.jpg';
+    } else if (roomName.toLowerCase().contains('bath')) {
+      roomImage = 'assets/images/bathroom.jpg';
+    } else if (roomName.toLowerCase().contains('garage')) {
+      roomImage = 'assets/images/garage.jpg';
+    }
     return Stack(
       fit: StackFit.expand,
       children: [
         Image.asset(
-          'assets/images/intro.jpg',
+          roomImage,
           fit: BoxFit.cover,
         ),
         Container( //has a transparent white and black gradient on top of image to make it look nicer
@@ -243,11 +250,24 @@ class _PhotoBigViewState extends State<PhotoBigView> {
             onPageChanged: onPageChanged,
             pageController: widget.pageController,
             builder: (context, index){
-              return PhotoViewGalleryPageOptions( //adjust the picture size as it shrink or expand
-                imageProvider: NetworkImage(widget.photoList[index]),
+              return PhotoViewGalleryPageOptions.customChild( //adjust pictures' sizes to the same size
+                child: Image(image: NetworkImage(widget.photoList[index]), fit: BoxFit.cover,
+                  loadingBuilder:(BuildContext context, Widget child,ImageChunkEvent loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                        value: loadingProgress.expectedTotalBytes != null ?
+                        loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes
+                            : null,
+                      ),
+                    );
+                  },
+                ),
                 minScale: PhotoViewComputedScale.contained * 0.6, //shrink to this min number and no less  (time: study how it operate to get contained)
                 maxScale: PhotoViewComputedScale.covered * 1.1, //expand to this max number and no more
                 initialScale: PhotoViewComputedScale.contained, //initial size
+                childSize: const Size(300, 250),
               );
             }
           )

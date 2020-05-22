@@ -55,6 +55,10 @@ flutter:
     - assets/images/logo.png
     - assets/images/note.png
     - assets/images/intro.jpg
+    - assets/images/living_room.jpg
+    - assets/images/bedroom.jpg
+    - assets/images/bathroom.jpg
+    - assets/images/garage.jpg
     - assets/images/loading.gif
 
   # An image asset can refer to one or more resolution-specific "variants", see
