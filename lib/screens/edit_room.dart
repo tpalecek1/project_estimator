@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:project_estimator/screens/room_photo_gallery.dart';
+import 'package:project_estimator/services/permission_manager.dart';
 import 'package:project_estimator/widgets/custom_button_1.dart';
 import '../models/room.dart';
 import '../models/room_note.dart';
@@ -21,7 +24,7 @@ class EditRoom extends StatefulWidget {
 
 
 
-class _EditRoomState extends State<EditRoom> {
+class _EditRoomState extends State<EditRoom> with TickerProviderStateMixin {
   final formKey = GlobalKey<FormState>();
 
   bool _isProcessing = false;
@@ -33,9 +36,19 @@ class _EditRoomState extends State<EditRoom> {
   List<RoomNote> _notes;
   StreamSubscription<List<RoomNote>> _roomNoteStreamSubscription;
 
+  File image;
+
+  //animation variables
+  AnimationController _animationController;
+  Animation _sizeAnimation;
+
   @override
   void initState() { 
     super.initState();
+
+    //initialize animation variables
+    _animationController = AnimationController(vsync: this, duration: Duration(milliseconds: 300));
+    _sizeAnimation = Tween(begin: 0.0, end: 1.0).animate(_animationController);
 
     _room = widget.room;
     if (_room.id != null) {
@@ -54,7 +67,7 @@ class _EditRoomState extends State<EditRoom> {
         return false;
       },
       child: Scaffold(
-          resizeToAvoidBottomInset: false,
+          //resizeToAvoidBottomInset: false,
           appBar: AppBar(
             automaticallyImplyLeading: false,                     // remove Flutter automatic "back" button from AppBar
             title: _room.id == null ? Text('New Room') : Text('Edit Room'),
@@ -141,194 +154,304 @@ class _EditRoomState extends State<EditRoom> {
 
   Widget _roomInfo(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
-    return Form(
-      key: formKey,
-      autovalidate: _hasInvalidInput ? true : false,
-      child: Column(
-          children: [
-          Text(
-            'Measurements',
-            style: Theme.of(context).textTheme.display1,
-            textAlign: TextAlign.left,
-          ),
-          Flexible(
-            fit: FlexFit.loose,
-            flex: 7,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    double bannerHeight = 60.0;
+    return Stack(
+      children:[
+        SingleChildScrollView(
+          child: Form(
+            key: formKey,
+            autovalidate: _hasInvalidInput ? true : false,
+            child: Column(
               children: [
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                AnimatedBuilder(
+                  animation: _animationController,
+                  builder: (context,index){
+                    return Container(
+                      width: screenWidth,
+                      height:60*_sizeAnimation.value
+                    );
+                  }
+                ),
+                Text(
+                  'Measurements',
+                  style: Theme.of(context).textTheme.display1,
+                  textAlign: TextAlign.left,
+                ),
+                Container(
+                  width: screenWidth,
+                  child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              textField(context,
+                                labelText: "Name",
+                                initialValue: _room.name,
+                                width: (screenWidth / 2) - 10,
+                                validator: (name) => name.trim().length == 0 ? 'Room name can\'t be empty' : null,
+                                onSaved: (name) => _room.name = name.trim(),
+                              ),
+                              textField(context,
+                                labelText: "Ceiling Height",
+                                initialValue: _room.ceilingHeight.toString(),
+                                width: (screenWidth / 2) - 10,
+                                validator: (ceilingHeight) => double.tryParse(ceilingHeight) == null ? 'Invalid ceiling height' : null,
+                                onSaved: (ceilingHeight) => _room.ceilingHeight = double.parse(ceilingHeight),
+                              ),
+                              Row(
+                                children: [
+                                  textField(context,
+                                    labelText: "Length",
+                                    initialValue: _room.length.toString(),
+                                    width: screenWidth / 4 - 10,
+                                    validator: (length) => double.tryParse(length) == null ? 'Invalid length' : null,
+                                    onSaved: (length) => _room.length = double.parse(length),
+                                  ),
+                                  textField(context,
+                                    labelText: "Width",
+                                    initialValue: _room.width.toString(),
+                                    width: screenWidth / 4 - 10,
+                                    validator: (width) => double.tryParse(width) == null ? 'Invalid width' : null,
+                                    onSaved: (width) => _room.width = double.parse(width),
+                                  ),
+                                ]
+                              ),
+                              CheckboxFormField(
+                                title: Text('Baseboard'),
+                                initialValue: _room.hasBaseboard,
+                                onSaved: (value) => _room.hasBaseboard = value,
+                              ),
+                              CheckboxFormField(
+                                title: Text('Chair Rail'),
+                                initialValue: _room.hasChairRail,
+                                onSaved: (value) => _room.hasChairRail = value,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Padding(padding: EdgeInsets.only(left: 40),),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              textField(
+                                context,
+                                initialValue: _room.doorCount.toString(),
+                                labelText: "Doors",
+                                width: screenWidth / 2 - 10,
+                                onSaved: (doorCount) => _room.doorCount = int.parse(doorCount),
+                                validator: (doorCount) => int.tryParse(doorCount) == null ? 'Invalid number of doors' : null,
+                              ),
+                              textField(
+                                context,
+                                initialValue: _room.windowCount.toString(),
+                                labelText: "Windows",
+                                width: screenWidth / 2 - 10,
+                                onSaved: (windowCount) => _room.windowCount = int.parse(windowCount),
+                                validator: (windowCount) => int.tryParse(windowCount) == null ? 'Invalid number of windows' : null,
+                              ),
+                              textField(
+                                context,
+                                initialValue: _room.accentWallCount.toString(),
+                                labelText: "Accent Walls",
+                                width: screenWidth / 2 - 10,
+                                onSaved: (accentWallCount) => _room.accentWallCount = int.parse(accentWallCount),
+                                validator: (accentWallCount) => int.tryParse(accentWallCount) == null ? 'Invalid number of accent walls' : null,
+                              ),
+                              CheckboxFormField(
+                                initialValue: _room.hasCrown,
+                                title: Text('Crown Molding', textAlign: TextAlign.left,),
+                                onSaved: (value) => _room.hasCrown = value,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ]
+                    )
+                    // ]
+                  // ),
+                ),
+                Container(
+                  width: screenWidth,
+                  height: 60,
+                  child: Row(
                     children: [
-                      textField(context,
-                        labelText: "Name",
-                        initialValue: _room.name,
-                        width: (screenWidth / 2) - 10,
-                        validator: (name) => name.trim().length == 0 ? 'Room name can\'t be empty' : null,
-                        onSaved: (name) => _room.name = name.trim(),
+                      Expanded(
+                        child: CustomButton1(
+                          onPressed: () {
+                            //Add Photo
+                            showDialog(
+                              context: context,
+                              builder: (context) {
+                                return SimpleDialog(
+                                  title: Container(child: const Text('Select a way to add your photo'), alignment: Alignment.center),
+                                  contentPadding:const EdgeInsets.fromLTRB(0.0, 12.0, 0.0, 5.0),
+                                  children: <Widget>[
+                                    Divider(height: 1),
+                                    SimpleDialogOption(
+                                      child: Container(height:30, child: const Text('Camera'), alignment: Alignment.center),
+                                      onPressed: () async { 
+                                        Navigator.of(context).pop(); 
+                                        image = null;
+                                        image = await ImagePicker.pickImage(source: ImageSource.camera);
+                                        if(image != null) {
+                                          //start animation: take the banner out
+                                          _animationController.forward();
+                                          //todo: uploading the photo
+                                          setState(() {});
+                                        }
+                                      },
+                                    ),
+                                    Divider(height: 1),
+                                    SimpleDialogOption(
+                                      child: Container(height:30, child: const Text('Photo Gallery'), alignment: Alignment.center),
+                                      onPressed: () async { 
+                                        if(await PermissionManager.checkAndRequestStoragePermissions()) { 
+                                          Navigator.of(context).pop(); 
+                                          image = null;
+                                          image = await ImagePicker.pickImage(source: ImageSource.gallery);
+                                          if(image != null) {
+                                            //start animation: take the banner out
+                                            _animationController.forward();
+                                            //todo: uploading the photo
+                                            setState(() {});
+                                          }
+                                        }                                         
+                                      },
+                                    ),
+                                    Divider(height: 1, color: Colors.blue),
+                                    SimpleDialogOption(
+                                      child: Container(height:30, child: const Text('Cancel', style: TextStyle(color: Colors.blue)), alignment: Alignment.center),
+                                      onPressed: () { 
+                                        Navigator.of(context).pop(); 
+                                      },
+                                    )                                   
+                                  ],
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(15))),
+                                );
+                              }
+                            );
+                          },
+                          child: Text('Add Photo')
+                        ),
                       ),
-                      textField(context,
-                        labelText: "Ceiling Height",
-                        initialValue: _room.ceilingHeight.toString(),
-                        width: (screenWidth / 2) - 10,
-                        validator: (ceilingHeight) => double.tryParse(ceilingHeight) == null ? 'Invalid ceiling height' : null,
-                        onSaved: (ceilingHeight) => _room.ceilingHeight = double.parse(ceilingHeight),
-                      ),
-                      Row(
-                        children: [
-                          textField(context,
-                            labelText: "Length",
-                            initialValue: _room.length.toString(),
-                            width: screenWidth / 4 - 10,
-                            validator: (length) => double.tryParse(length) == null ? 'Invalid length' : null,
-                            onSaved: (length) => _room.length = double.parse(length),
-                          ),
-                          textField(context,
-                            labelText: "Width",
-                            initialValue: _room.width.toString(),
-                            width: screenWidth / 4 - 10,
-                            validator: (width) => double.tryParse(width) == null ? 'Invalid width' : null,
-                            onSaved: (width) => _room.width = double.parse(width),
-                          ),
-                        ]
-                      ),
-                      CheckboxFormField(
-                        title: Text('Baseboard'),
-                        initialValue: _room.hasBaseboard,
-                        onSaved: (value) => _room.hasBaseboard = value,
-                      ),
-                      CheckboxFormField(
-                        title: Text('Chair Rail'),
-                        initialValue: _room.hasChairRail,
-                        onSaved: (value) => _room.hasChairRail = value,
-                      ),
+                      Expanded(
+                        child: CustomButton1(
+                          onPressed: () {
+                            Navigator.of(context).pushNamed(RoomPhotoGallery.routeName);
+                          },
+                          child: Text('View Photos')
+                        ),
+                      )
                     ],
                   ),
                 ),
-                Padding(padding: EdgeInsets.only(left: 40),),
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                Container(
+                  width: screenWidth,
+                  height: 65,
+                  child: Row(
                     children: [
-                      textField(
-                        context,
-                        initialValue: _room.doorCount.toString(),
-                        labelText: "Doors",
-                        width: screenWidth / 2 - 10,
-                        onSaved: (doorCount) => _room.doorCount = int.parse(doorCount),
-                        validator: (doorCount) => int.tryParse(doorCount) == null ? 'Invalid number of doors' : null,
-                      ),
-                      textField(
-                        context,
-                        initialValue: _room.windowCount.toString(),
-                        labelText: "Windows",
-                        width: screenWidth / 2 - 10,
-                        onSaved: (windowCount) => _room.windowCount = int.parse(windowCount),
-                        validator: (windowCount) => int.tryParse(windowCount) == null ? 'Invalid number of windows' : null,
-                      ),
-                      textField(
-                        context,
-                        initialValue: _room.accentWallCount.toString(),
-                        labelText: "Accent Walls",
-                        width: screenWidth / 2 - 10,
-                        onSaved: (accentWallCount) => _room.accentWallCount = int.parse(accentWallCount),
-                        validator: (accentWallCount) => int.tryParse(accentWallCount) == null ? 'Invalid number of accent walls' : null,
-                      ),
-                      CheckboxFormField(
-                        initialValue: _room.hasCrown,
-                        title: Text('Crown Molding', textAlign: TextAlign.left,),
-                        onSaved: (value) => _room.hasCrown = value,
-                      ),
-                    ],
-                  ),
+                      Expanded(child: Container(child: Align(child: Text('Room Notes', style: Theme.of(context).textTheme.display1), alignment: Alignment.centerLeft))),
+                      CustomButton1(
+                        onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (context){
+                                return NewNoteDialog(
+                                  title: "New Room Note", 
+                                  hint: "Enter room note",
+                                  onCancel: (){Navigator.of(context).pop();},
+                                  onSubmit: (hasCost, note) {
+                                    Database().createRoomNote(_room.id, RoomNote(hasCost: hasCost, description: note));
+                                    setState(() { _roomIsModified = true; });
+                                    Navigator.of(context).pop();
+                                  },
+                                );
+                              }
+                            );
+                          },
+                        child: Text('Add Note'),
+                      )
+                    ]
+                  )
                 ),
-              ]
+                _notes == null ?
+                Center(child: CircularProgressIndicator()) :
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: _notes.length,
+                  itemBuilder: (context, index){
+                  return Container(
+                    margin: EdgeInsets.fromLTRB(5, 2, MediaQuery.of(context).size.width*.25, 2),
+                    //margin: EdgeInsets.all(1),
+                    decoration: BoxDecoration(border: Border.all(), borderRadius: BorderRadius.circular(10)),
+                    child: ListTile(
+                      title: Text(_notes[index].description),
+                      trailing: Container(
+                        width: 50,
+                        child: FlatButton(
+                          child: Icon(Icons.delete),
+                          onPressed: (){
+                            Database().deleteRoomNote(_notes[index].id);
+                            setState(() { _roomIsModified = true; });
+                          },
+                        ),
+                      ),
+                    )
+                  );
+                }),
+                // Container( //test use only
+                //   width: 100,
+                //   height: 100,
+                //   child: image==null? Text("no image"): Image(image: FileImage(image)),
+                // )
+              ],
             )
           ),
-            Flexible(
-              flex: 2,
-              fit: FlexFit.tight,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: CustomButton1(
-                      onPressed: () {
-                        //todo: Add Photo
-                      },
-                      child: Text('Add Photo')
-                    ),
+        ),
+        AnimatedBuilder(
+          animation: _animationController,
+          builder:(context,index){ 
+            return Positioned(
+            top: -60 + _sizeAnimation.value * bannerHeight,
+            // top: -20,
+            left: 0,
+            child: SizedBox(
+              width: screenWidth,
+              height: 60,
+              child: Opacity(
+                opacity: 0.90,
+                child: MaterialBanner(
+                  contentTextStyle: TextStyle(color: Colors.white, backgroundColor: Colors.indigo),
+                  content: Text(
+                    "Uploading Picture...",
                   ),
-                  Expanded(
-                    child: CustomButton1(
-                      onPressed: () {
-                        Navigator.of(context).pushNamed(RoomPhotoGallery.routeName);
-                      },
-                      child: Text('View Photos')
+                  leading: Image(image: AssetImage("assets/images/loading.gif"), height: 30,),   
+                  backgroundColor: Colors.indigo,
+                  actions: <Widget>[
+                    FlatButton(
+                      child: Text("Cancel", style: TextStyle(color: Colors.white)),
+                      onPressed: _hideBanner,
                     ),
-                  )
-                ],
+                  ],
+                ),
               ),
             ),
-            Flexible(
-              flex: 2,
-              fit: FlexFit.tight,
-              child: Row(
-                children: [
-                  Expanded(child: Container(child: Align(child: Text('Room Notes', style: Theme.of(context).textTheme.display1), alignment: Alignment.centerLeft))),
-                  CustomButton1(
-                    onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (context){
-                            return NewNoteDialog(
-                              title: "New Room Note", 
-                              hint: "Enter room note",
-                              onCancel: (){Navigator.of(context).pop();},
-                              onSubmit: (hasCost, note) {
-                                Database().createRoomNote(_room.id, RoomNote(hasCost: hasCost, description: note));
-                                setState(() { _roomIsModified = true; });
-                                Navigator.of(context).pop();
-                              },
-                            );
-                          }
-                        );
-                      },
-                    child: Text('Add Note'),
-                  )
-                ]
-              )
-            ),
-            Flexible(
-              flex: 4,
-              child: _notes == null ?
-              Center(child: CircularProgressIndicator()) :
-              ListView.builder(
-                itemCount: _notes.length,
-                itemBuilder: (context, index){
-                return Container(
-                  margin: EdgeInsets.fromLTRB(5, 2, MediaQuery.of(context).size.width*.25, 2),
-                  //margin: EdgeInsets.all(1),
-                  decoration: BoxDecoration(border: Border.all(), borderRadius: BorderRadius.circular(10)),
-                  child: ListTile(
-                    title: Text(_notes[index].description),
-                    trailing: Container(
-                      width: 50,
-                      child: FlatButton(
-                        child: Icon(Icons.delete),
-                        onPressed: (){
-                          Database().deleteRoomNote(_notes[index].id);
-                          setState(() { _roomIsModified = true; });
-                        },
-                      ),
-                    ),
-                  )
-                );
-              }),
-            )
-          ],
-        )
+          );
+          }
+        ),
+      ]
     );
+  }
+
+  void _hideBanner() {
+    //reverse the animation: hide the banner out of screen
+    _animationController.reverse();
+    // setState((){});
   }
 
   void _listenForRoomNotes() {
@@ -341,6 +464,7 @@ class _EditRoomState extends State<EditRoom> {
   @override
   void dispose() {
     _roomNoteStreamSubscription?.cancel();
+    _animationController.dispose();
     super.dispose();
   }
 
