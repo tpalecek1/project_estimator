@@ -10,9 +10,12 @@ import '../models/user.dart';
 import '../models/paint_settings.dart';
 import 'package:project_estimator/services/database.dart';
 import 'pdf_preview.dart';
+import 'download_pdf.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_email_sender/flutter_email_sender.dart';
 
 class ProjectEstimate extends StatefulWidget {
   ProjectEstimate({Key key, this.userId, this.project, this.rooms}) : super(key: key);
@@ -30,6 +33,7 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
   Project project;
   List<Room> rooms;
   Estimate estimate;
+  User user;
 
   List<ProjectNote> projectNotes;
   List<RoomInfo> roomNotes;   // [ RoomInfo(name: 'room name', notes: List<RoomNote>), ... ]
@@ -37,7 +41,7 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
 
   bool _isProcessing = false;
   
-  final pdf = pw.Document();
+  pw.Document pdf;
   String filePath;
 
 
@@ -143,13 +147,38 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                   ListTile(
                     leading: Icon(Icons.view_compact), 
                     title: Text("Download as PDF", style: Theme.of(context).textTheme.subtitle, textScaleFactor: 1.1,),
-                    onTap: () {
-                      writePdf();
-                      savePdf();
-                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => PdfPreview(path: filePath)));
+                    onTap: () async {
+                      if(user == null){
+                        user = await getUser();
+                      }
+                      if(await Permission.storage.request().isGranted){
+                        writePdf();
+                        await savePdf();
+                        Navigator.of(context).push(MaterialPageRoute(builder: (context) => PdfPreview(path: filePath, pdf: pdf)));
+                      }
+                      else{
+                        Navigator.of(context).pop();
+                      }
                     },
                   ),
-                  ListTile(leading: Icon(Icons.email), title: Text("Send as email", style: Theme.of(context).textTheme.subtitle, textScaleFactor: 1.1,)),
+                  ListTile(
+                    leading: Icon(Icons.email), 
+                    title: Text("Send as email", style: Theme.of(context).textTheme.subtitle, textScaleFactor: 1.1,),
+                    onTap: () async {
+                      if(user == null){
+                        user = await getUser();
+                      }
+                      writePdf();
+                      await savePdf();
+                      final Email email = Email(
+                        body: 'Attached you will find the proposal for this project.  Thank you for the opportunity to bid this project.',
+                        subject: 'Project painting proposal',
+                        recipients: ['example@email.com'],
+                        attachmentPaths: [], //todo - add pdf attachment
+                      );
+                      await FlutterEmailSender.send(email);
+                    },
+                  ),
                 ],
               )
           ),
@@ -366,8 +395,9 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
     // get user paint settings
     // note: same logic as project and room notes above
     if (settings == null) {                             // only get settings once
-      User user = await Database().readUser(widget.userId);
-      settings = user.paintSettings;
+      User _user = await Database().readUser(widget.userId);
+      user = _user;
+      settings = _user.paintSettings;
     }
 
     estimate = Estimate();
@@ -387,11 +417,30 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
   }
   
   void writePdf() async {
+    pdf = pw.Document();
     final font = await rootBundle.load("assets/fonts/OpenSans-Regular.ttf");
     final ttf = pw.Font.ttf(font);
     pw.ThemeData theme = pw.Theme.withFont(
       base: ttf,
     );
+    if(estimate.items.length < 8){
+      writeSinglePage(theme);
+    }
+    else{
+      int itemsWritten = 0;
+      int itemsToWrite;
+      while(itemsWritten < estimate.items.length - 8){
+        itemsToWrite = estimate.items.length - itemsWritten;
+        if(itemsToWrite > 14) itemsToWrite = 14;
+        writeFirstPage(theme, itemsToWrite, itemsWritten);
+        itemsWritten += itemsToWrite;
+      }
+      itemsToWrite = estimate.items.length - itemsWritten;
+      writeLastPage(theme, itemsToWrite, itemsWritten);
+      print(itemsWritten);
+    }
+  }
+  void writeSinglePage(pw.ThemeData theme){
     pdf.addPage(pw.MultiPage(
       theme: theme,
       pageFormat: PdfPageFormat.a4,
@@ -402,8 +451,8 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Paragraph(text: "License # #####"),
-                pw.Paragraph(text: 'Page No. # of #')
+                pw.Paragraph(text: "License # ${user.licenseNumber}"),
+                pw.Paragraph(text: 'Page No. 1 of 1')
               ],
             ),
             pw.Align(
@@ -519,14 +568,226 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
     ));
   }
 
+  void writeFirstPage(pw.ThemeData theme, int itemsToWrite, int itemsWritten){
+    int pageNo = (itemsWritten / 14).ceil();
+    if(pageNo == 0) pageNo = 1;
+    pdf.addPage(pw.Page(
+      theme: theme,
+      pageFormat: PdfPageFormat.a4,
+      margin: pw.EdgeInsets.all(32),
+      build: (pw.Context context) {
+        return pw.Column(
+          children: [
+              pw.Column(
+              children: [
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Paragraph(text: "License # ${user.licenseNumber}"),
+                    pw.Paragraph(text: 'Page No. $pageNo of ${(estimate.items.length / 14).ceil()}')
+                  ],
+                ),
+                pw.Align(
+                  alignment: pw.Alignment.topLeft,
+                  child: pw.Paragraph(text: 'Expires: xx', textAlign: pw.TextAlign.left)
+                )
+              ],
+            ),
+              pw.Header(
+                level: 0,
+                child: pw.Align(
+                  alignment: pw.Alignment.center,
+                  child: pw.Text('Proposal', style: pw.TextStyle(fontSize: 36)),
+                ),
+              ),
+              pw.Table(
+                  border: pw.TableBorder(),
+                children: [
+                  pw.TableRow(
+                    children: [
+                      pw.Paragraph(text: 'Submitted to', padding: pw.EdgeInsets.only(left: 3)),
+                      pw.Paragraph(text: 'Today\'s date', padding: pw.EdgeInsets.only(left: 3)), 
+                    ],
+                  ),
+                  pw.TableRow(
+                    children: [
+                      pw.Paragraph(text: 'Phone Number', padding: pw.EdgeInsets.only(left: 3)),
+                      pw.Paragraph(text: 'Job Name', padding: pw.EdgeInsets.only(left: 3)), 
+                    ],
+                  ),
+                  pw.TableRow(
+                    children: [
+                      pw.Paragraph(text: 'Project address', padding: pw.EdgeInsets.only(left: 3)),
+                      pw.Paragraph(text: 'Project Name', padding: pw.EdgeInsets.only(left: 3)), 
+                    ],
+                  ),
+                ],
+              ),
+              pw.Align(
+                alignment: pw.Alignment.topLeft,
+                child: pw.Paragraph(text: 'We propose hereby to furnish material and labor necessary for the completion of:')
+              ),
+              pw.Align(
+                alignment: pw.Alignment.topLeft,
+                child: pw.ListView.builder(
+                  itemCount: itemsToWrite,
+                  itemBuilder: (context, index){
+                      return pw.Row(
+                        children: [
+                          pw.Flexible(
+                            child:pw.Bullet(text: '${estimate.items[index + itemsWritten].name}'),
+                          ),
+                          pw.Flexible(
+                            child: pw.Paragraph(text: '\$${estimate.items[index + itemsWritten].cost}'),
+                            
+                          ),
+                        ]
+                      );
+                  },
+                ),
+              ),
+          ]
+        );
+      },
+    ));
+  }
+  
+  void writeLastPage(pw.ThemeData theme, int itemsToWrite, int itemsWritten){
+    pdf.addPage(pw.Page(
+      theme: theme,
+      pageFormat: PdfPageFormat.a4,
+      margin: pw.EdgeInsets.all(32),
+      build: (pw.Context context) {
+        return pw.Column(
+          children: [
+              pw.Column(
+              children: [
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Paragraph(text: "License # ${user.licenseNumber}"),
+                    pw.Paragraph(text: 'Page No. ${(estimate.items.length / 14).ceil()} of ${(estimate.items.length / 14).ceil()}')
+                  ],
+                ),
+/*                 pw.Align(
+                  alignment: pw.Alignment.topLeft,
+                  child: pw.Paragraph(text: 'Expires: xx', textAlign: pw.TextAlign.left)
+                ) */
+              ],
+            ),
+              pw.Header(
+                level: 0,
+                child: pw.Align(
+                  alignment: pw.Alignment.center,
+                  child: pw.Text('Proposal', style: pw.TextStyle(fontSize: 36)),
+                ),
+              ),
+              pw.Table(
+                  border: pw.TableBorder(),
+                children: [
+                  pw.TableRow(
+                    children: [
+                      pw.Paragraph(text: 'Submitted to', padding: pw.EdgeInsets.only(left: 3)),
+                      pw.Paragraph(text: 'Today\'s date', padding: pw.EdgeInsets.only(left: 3)), 
+                    ],
+                  ),
+                  pw.TableRow(
+                    children: [
+                      pw.Paragraph(text: 'Phone Number', padding: pw.EdgeInsets.only(left: 3)),
+                      pw.Paragraph(text: 'Job Name', padding: pw.EdgeInsets.only(left: 3)), 
+                    ],
+                  ),
+                  pw.TableRow(
+                    children: [
+                      pw.Paragraph(text: 'Project address', padding: pw.EdgeInsets.only(left: 3)),
+                      pw.Paragraph(text: 'Project Name', padding: pw.EdgeInsets.only(left: 3)), 
+                    ],
+                  ),
+                ],
+              ),
+              pw.Align(
+                alignment: pw.Alignment.topLeft,
+                child: pw.Paragraph(text: 'We propose hereby to furnish material and labor necessary for the completion of:')
+              ),
+              pw.Align(
+                alignment: pw.Alignment.topLeft,
+                child: pw.ListView.builder(
+                  itemCount: itemsToWrite,
+                  itemBuilder: (context, index){
+                      return pw.Row(
+                        children: [
+                          pw.Flexible(
+                            child:pw.Bullet(text: '${estimate.items[index + itemsWritten].name}'),
+                          ),
+                          pw.Flexible(
+                            child: pw.Paragraph(text: '\$${estimate.items[index + itemsWritten].cost}'),
+                            
+                          ),
+                        ]
+                      );
+                  },
+                ),
+              ),
+              pw.Align(alignment: pw.Alignment.bottomCenter,
+                child: pw.Container(
+                  padding: pw.EdgeInsets.all(10),
+                  decoration: pw.BoxDecoration(
+                    border: pw.BoxBorder(
+                      top: true,
+                      bottom: true,
+                      left: true,
+                      right: true,
+                      color: PdfColor.fromRYB(1, 1, 1),
+                      width: 2,
+                    )
+                  ),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+                    children: [
+                      pw.Paragraph(text: 'We propose hereby to furnish material and labor for the above scope of work -\n in accordance with the above specifications for the sum of \$${(estimate.subtotal() * 1.0725).toStringAsFixed(2)} '),
+                      pw.Paragraph(text: 'Any alteration or deviation from the above specifications involving extra costs will be executed only upon written order, and will become an extra charge over and above the estimate. All agreements contingent upon strikes, accidents or delays beyond control. Owner to carry fire, tornado and other necessary insurance upon above work.  Workmen\'s Compensation and public Liability Insurance on above work to be taken out by contractor. Payment in full is due within 30 days of completion of above work.'),
+                      pw.Row(
+                        children: [
+                          pw.Container(
+                            width: 50,
+                            child: pw.Paragraph(text: 'Authorized Signature'),
+                          ),
+                          pw.Expanded(
+                            child: pw.Container(
+                              decoration: pw.BoxDecoration(
+                                border: pw.BoxBorder(
+                                  bottom: true,
+                                  width: 1.5,
+                                )
+                              ),
+                              height: 20,
+                              child: pw.Container(),
+                            ),
+                          )
+                        ]
+                      )
+                      ]
+                  )
+                ),
+              ),
+          ]
+        );
+      },
+    ));
+  }
+
   Future savePdf() async {
     Directory docDir = await getApplicationDocumentsDirectory();
     String documentPath = docDir.path;
-    filePath = "$documentPath/example1.pdf";
+    filePath = "$documentPath/proposal.pdf";
     File file = File(filePath);
-
     file.writeAsBytesSync(pdf.save());
   }
+
+  Future getUser() async {
+    return await Database().readUser(widget.userId);
+  }
+
 }
 
 class RoomInfo {
