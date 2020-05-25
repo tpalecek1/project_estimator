@@ -1,13 +1,17 @@
 /*
-  Description: Copy of the recursiveDelete function that was uploaded to the
+  Description: Copy of the cloud functions that were uploaded to the
     app's Firebase Cloud Function service. Note: this document was only added
     to the app's files for documentation purposes (it is not needed client side).
   Collaborator(s): Genevieve B-Michaud
 */
 
+const firebase = require('firebase-admin');
 const functions = require('firebase-functions');
 const firebaseTools = require('firebase-tools');
 
+firebase.initializeApp();
+
+// recursively delete document(s) in sub-collection(s)
 exports.recursiveDelete = functions
 	.runWith({										// from: https://firebase.google.com/docs/firestore/solutions/delete-collections
 		timeoutSeconds: 540,
@@ -52,4 +56,50 @@ exports.recursiveDelete = functions
 					error
 				);
 			});
+	});
+
+// on room delete -> delete room's photos from cloud storage
+exports.onRoomDelete = functions
+	.firestore.document('users/{userId}/projects/{projectId}/rooms/{roomId}')
+	.onDelete((doc, context) => {
+		const userId = context.params.userId;
+		const roomId = context.params.roomId;
+		const path = 'users/' + userId + '/rooms/' + roomId + '/';
+		const storage = firebase.storage().bucket();
+
+		return storage.deleteFiles({ prefix: path });
+	});
+
+// on room update -> delete any deleted room photo from cloud storage
+exports.onRoomUpdate = functions
+	.firestore.document('users/{userId}/projects/{projectId}/rooms/{roomId}')
+	.onUpdate((doc, context) => {
+		const userId = context.params.userId;
+		const roomId = context.params.roomId;
+		const path = 'users/' + userId + '/rooms/' + roomId + '/';
+		const storage = firebase.storage().bucket();
+
+		const photosBefore = doc.before.data().photos;
+		const photosAfter = doc.after.data().photos;
+
+		const photosDeleted = photosBefore.filter((photoBefore) => {
+			return !photosAfter.includes(photoBefore);
+		});
+
+		const deletePhotos = photosDeleted.map((url) => {
+			return storage.file(path + url.match(/(?!%2F)\d+(?=\?)/)).delete();
+		});
+
+		return Promise.all(deletePhotos);
+	});
+
+// on user delete -> delete user avatar from cloud storage
+exports.onUserDelete = functions
+	.firestore.document('users/{userId}')
+	.onDelete((doc, context) => {
+		const userId = context.params.userId;
+		const path = 'users/' + userId + '/avatar/';
+		const storage = firebase.storage().bucket();
+
+		return storage.deleteFiles({ prefix: path });
 	});
