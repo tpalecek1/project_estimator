@@ -260,7 +260,7 @@ class _RoomDetailState extends State<RoomDetail> {
                   Expanded(
                       child: CustomButton1(
                           onPressed: () {
-                            Navigator.of(context).pushNamed(RoomPhotoGallery.routeName);
+                            Navigator.of(context).push(MaterialPageRoute(builder: (context) => RoomPhotoGallery(roomId: _room.id)));
                           },
                           child: Text('Room Photos')
                       )

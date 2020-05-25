@@ -341,7 +341,12 @@ class _EditRoomState extends State<EditRoom> with TickerProviderStateMixin {
                       Expanded(
                         child: CustomButton1(
                           onPressed: () {
-                            Navigator.of(context).pushNamed(RoomPhotoGallery.routeName);
+                            Navigator.of(context).push(MaterialPageRoute(builder: (context) => RoomPhotoGallery(roomId: _room.id)))
+                            .then((roomIsModified) {
+                              if (!_roomIsModified && roomIsModified) {
+                                setState(() { _roomIsModified = roomIsModified; });
+                              }
+                            });
                           },
                           child: Text('View Photos')
                         ),
