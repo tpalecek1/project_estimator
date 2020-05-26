@@ -10,8 +10,6 @@ import 'package:project_estimator/services/permission_manager.dart';
 import 'package:project_estimator/services/database.dart';
 import 'package:project_estimator/services/storage.dart';
 
-String temp = 'https://firebasestorage.googleapis.com/v0/b/wasteagram-18a5f.appspot.com/o/2020-03-17%2005%3A24%3A38.249222?alt=media&token=514559cf-ad73-4692-8d22-7568a0f26089';
-//todo: reduce duplicate code that upadte values throught firebase
 class UserSetting extends StatefulWidget {
   UserSetting({Key key, this.userId}) : super(key: key);
   static const routeName = 'user_setting';
@@ -86,7 +84,7 @@ class _UserSettingState extends State<UserSetting> {
                               child: CircleAvatar(
                                 backgroundColor: Colors.white,
                                 radius: 50.0,
-                                backgroundImage: _user.avatar==''? NetworkImage(temp) : NetworkImage(_user.avatar),
+                                backgroundImage: _user.avatar==''? AssetImage('assets/images/avatar.png') : NetworkImage(_user.avatar),
                               ),
                             ),
                           ),
@@ -126,6 +124,20 @@ class _UserSettingState extends State<UserSetting> {
                         ),
                         margin: EdgeInsets.fromLTRB(0, 4, 0, 4),
                         child: PaintSettingBox(user: _user, userState: _userState)
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  Text('Delete Account', style: Theme.of(context).textTheme.title),
+                  Container(
+                    width: double.infinity,
+                    child: Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          side: BorderSide(color: Colors.red, width: 3),
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        margin: EdgeInsets.fromLTRB(0, 4, 0, 4),
+                        child: DeleteAccountBox()
                     ),
                   ),
                 ]
@@ -410,7 +422,6 @@ class _SettingRowState extends State<SettingRow> {
               }, 
               child: Text('Update')
             ),
-          
           ],
         );
       }
@@ -418,4 +429,89 @@ class _SettingRowState extends State<SettingRow> {
   }
 }
 
+class DeleteAccountBox extends StatefulWidget {
+  @override
+  _DeleteAccountBoxState createState() => _DeleteAccountBoxState();
+}
 
+class _DeleteAccountBoxState extends State<DeleteAccountBox> {
+
+  TextEditingController _textController = TextEditingController();
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Row(
+        children: [
+          Expanded(child: Text('Once you delete this account, there is no going back.', style: Theme.of(context).textTheme.subtitle)),
+          SizedBox(width: 5),
+          RaisedButton(onPressed: (){
+            showDialog(
+              context: context,
+              builder: (newContext) { //different from what have learned from CS492, the context generated from dialog builder has no scaffold context
+                return AlertDialog(
+                  contentPadding : const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 0.0),
+                  title:
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                    Text('Are you sure?\n', style: TextStyle(fontSize: 18, color: Colors.black)),
+                    Text('Please enter your password to confirm\n', style: TextStyle(fontSize: 16, color: Colors.black))
+                  ]),
+                  content: TextFormField(
+                    obscureText: true,
+                    controller: _textController,
+                    decoration: InputDecoration(
+                      labelText: 'Password', border: OutlineInputBorder()
+                    )
+                  ),
+                  actions: [
+                    FlatButton(
+                      onPressed: (){
+                        Navigator.of(newContext).pop();
+                      }, 
+                      child: Text('Cancel')
+                    ),  
+                    FlatButton(
+                      onPressed: (){
+                        // print(_textController.text);
+                        showSnackBar(context, _textController.text); //do not use newConext whe calling the snackbar
+                        Navigator.of(newContext).pop();
+                      }, 
+                      child: Text('Confirm')
+                    ),
+                  ],
+                );
+              }
+            );
+          }, child: Text('delete'))
+        ],
+      ),
+    );
+  }
+
+  void showSnackBar(BuildContext context, String message) {
+    Scaffold.of(context).showSnackBar(
+      SnackBar(
+        content: Container(
+          height: 20,
+          child: Text('invalid password!'),
+          alignment: Alignment.center,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(5))
+        ),
+        backgroundColor: Colors.black.withOpacity(0.5), 
+        elevation: 1000, 
+        behavior: SnackBarBehavior.floating
+      )
+    );   
+  }
+}
