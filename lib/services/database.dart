@@ -57,6 +57,7 @@ abstract class DatabaseInterface {
   // rooms
   Future<String> createRoom(String projectId, Room room);
   Future<Room> readRoom(String roomId);
+  Stream<Room> readRoomRealTime(String roomId);
   Future<List<Room>> readRooms(String projectId);
   Stream<List<Room>> readRoomsRealTime(String projectId);
   Future<void> updateRoom(Room room);
@@ -408,6 +409,31 @@ class Database implements DatabaseInterface {
     }
 
     return doc.exists ? Room.fromMap(doc.data, doc.reference.path) : null;
+  }
+
+  Stream<Room> readRoomRealTime(String roomId) {
+    StreamController<Room> roomStreamCtl;
+    StreamSubscription roomStreamSub;
+
+    void listenForRoom() {
+      roomStreamSub = _db.document(roomId).snapshots().listen((snapshot) {
+        if (snapshot.exists) {
+          roomStreamCtl.add(Room.fromMap(snapshot.data, snapshot.reference.path));
+        }
+      });
+    }
+
+    void stopListeningForRoom() {
+      roomStreamSub.cancel();
+      roomStreamCtl.close();
+    }
+
+    roomStreamCtl = StreamController<Room>.broadcast(
+      onListen: listenForRoom,
+      onCancel: stopListeningForRoom
+    );
+
+    return roomStreamCtl.stream;
   }
 
   Future<List<Room>> readRooms(String projectId) async {

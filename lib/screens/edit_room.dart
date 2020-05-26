@@ -10,6 +10,7 @@ import '../models/room_note.dart';
 import '../widgets/checkbox_form_field.dart';
 import '../widgets/new_note_dialog.dart';
 import 'package:project_estimator/services/database.dart';
+import 'package:project_estimator/services/storage.dart';
 
 class EditRoom extends StatefulWidget {
   EditRoom({Key key, this.projectId, this.room}) : super(key: key);
@@ -33,6 +34,7 @@ class _EditRoomState extends State<EditRoom> with TickerProviderStateMixin {
 
   Room _roomInitialState;           // to help determine if room entity/document (not its related entities/sub-collections) needs to be updated
   Room _room;
+  StreamSubscription<Room> _roomStreamSubscription;
   List<RoomNote> _notes;
   StreamSubscription<List<RoomNote>> _roomNoteStreamSubscription;
 
@@ -41,6 +43,8 @@ class _EditRoomState extends State<EditRoom> with TickerProviderStateMixin {
   //animation variables
   AnimationController _animationController;
   Animation _sizeAnimation;
+
+  UploadManager _roomUploadManager;
 
   @override
   void initState() { 
@@ -53,7 +57,9 @@ class _EditRoomState extends State<EditRoom> with TickerProviderStateMixin {
     _room = widget.room;
     if (_room.id != null) {
       _roomInitialState = Room.fromRoom(_room);
+      _listenForRoom();
       _listenForRoomNotes();
+      _initializeRoomUploadManager();
     }
   }
 
@@ -96,8 +102,13 @@ class _EditRoomState extends State<EditRoom> with TickerProviderStateMixin {
                       String roomId = await Database().createRoom(widget.projectId, _room);
                       _room = await Database().readRoom(roomId);
                       _roomInitialState = Room.fromRoom(_room);
+                      _listenForRoom();
                       _listenForRoomNotes();
+                      _initializeRoomUploadManager();
                       setState(() { _isProcessing = false; _roomIsModified = true; });
+                    }
+                    else if (_roomUploadManager.isActive) {
+                      _showActiveUploadDialog();
                     }
                     else {
                       if (_room != _roomInitialState) {
@@ -298,28 +309,35 @@ class _EditRoomState extends State<EditRoom> with TickerProviderStateMixin {
                                         image = null;
                                         image = await ImagePicker.pickImage(source: ImageSource.camera);
                                         if(image != null) {
-                                          //start animation: take the banner out
-                                          _animationController.forward();
-                                          //todo: uploading the photo
-                                          setState(() {});
+                                          if (!_roomIsModified) { setState(() { _roomIsModified = true; }); }
+                                          _roomUploadManager.uploadFile(image);
+                                          if (!(_animationController.status == AnimationStatus.forward ||
+                                                _animationController.status == AnimationStatus.completed)) {
+                                            _animationController.forward(); //start animation: take the banner out
+                                          }
                                         }
                                       },
                                     ),
                                     Divider(height: 1),
                                     SimpleDialogOption(
                                       child: Container(height:30, child: const Text('Photo Gallery'), alignment: Alignment.center),
-                                      onPressed: () async { 
-                                        if(await PermissionManager.checkAndRequestStoragePermissions()) { 
-                                          Navigator.of(context).pop(); 
+                                      onPressed: () async {
+                                        if(await PermissionManager.checkAndRequestStoragePermissions()) {
+                                          Navigator.of(context).pop();
                                           image = null;
                                           image = await ImagePicker.pickImage(source: ImageSource.gallery);
                                           if(image != null) {
-                                            //start animation: take the banner out
-                                            _animationController.forward();
-                                            //todo: uploading the photo
-                                            setState(() {});
+                                            if (!_roomIsModified) { setState(() { _roomIsModified = true; }); }
+                                            _roomUploadManager.uploadFile(image);
+                                            if (!(_animationController.status == AnimationStatus.forward ||
+                                                  _animationController.status == AnimationStatus.completed)) {
+                                              _animationController.forward(); //start animation: take the banner out
+                                            }
                                           }
-                                        }                                         
+                                        }
+                                        else {
+                                          Navigator.of(context).pop();
+                                        }
                                       },
                                     ),
                                     Divider(height: 1, color: Colors.blue),
@@ -341,7 +359,12 @@ class _EditRoomState extends State<EditRoom> with TickerProviderStateMixin {
                       Expanded(
                         child: CustomButton1(
                           onPressed: () {
-                            Navigator.of(context).pushNamed(RoomPhotoGallery.routeName);
+                            Navigator.of(context).push(MaterialPageRoute(builder: (context) => RoomPhotoGallery(roomId: _room.id)))
+                            .then((roomIsModified) {
+                              if (!_roomIsModified && roomIsModified) {
+                                setState(() { _roomIsModified = roomIsModified; });
+                              }
+                            });
                           },
                           child: Text('View Photos')
                         ),
@@ -366,7 +389,7 @@ class _EditRoomState extends State<EditRoom> with TickerProviderStateMixin {
                                   onCancel: (){Navigator.of(context).pop();},
                                   onSubmit: (hasCost, note) {
                                     Database().createRoomNote(_room.id, RoomNote(hasCost: hasCost, description: note));
-                                    setState(() { _roomIsModified = true; });
+                                    if (!_roomIsModified) { setState(() { _roomIsModified = true; }); }
                                     Navigator.of(context).pop();
                                   },
                                 );
@@ -397,7 +420,7 @@ class _EditRoomState extends State<EditRoom> with TickerProviderStateMixin {
                           child: Icon(Icons.delete),
                           onPressed: (){
                             Database().deleteRoomNote(_notes[index].id);
-                            setState(() { _roomIsModified = true; });
+                            if (!_roomIsModified) { setState(() { _roomIsModified = true; }); }
                           },
                         ),
                       ),
@@ -417,41 +440,62 @@ class _EditRoomState extends State<EditRoom> with TickerProviderStateMixin {
           animation: _animationController,
           builder:(context,index){ 
             return Positioned(
-            top: -60 + _sizeAnimation.value * bannerHeight,
-            // top: -20,
-            left: 0,
-            child: SizedBox(
-              width: screenWidth,
-              height: 60,
-              child: Opacity(
-                opacity: 0.90,
-                child: MaterialBanner(
-                  contentTextStyle: TextStyle(color: Colors.white, backgroundColor: Colors.indigo),
-                  content: Text(
-                    "Uploading Picture...",
+              top: -60 + _sizeAnimation.value * bannerHeight,
+              // top: -20,
+              left: 0,
+              child: SizedBox(
+                width: screenWidth,
+                height: 60,
+                child: Opacity(
+                  opacity: 0.90,
+                  child: _roomUploadManager == null ?
+                  SizedBox() :
+                  StreamBuilder<UploadEvent>(
+                    stream: _roomUploadManager.uploadEvents,
+                    builder: (context, AsyncSnapshot<UploadEvent> snapshot) {
+                      UploadEvent event = snapshot?.data;
+                      double progress = 0;
+                      if (event != null) {
+                        progress = event.bytesUploaded == 0 ? 0.1 : event.bytesUploaded / event.bytesToUpload;  // if upload just started (bytesUploaded == 0), show a progress of 10% -> more user friendly, shows that upload is in process
+                      }
+                      return MaterialBanner(
+                        contentTextStyle: TextStyle(color: Colors.white, backgroundColor: Colors.indigo),
+                        content: progress < 1 ?
+                        Text("Uploading ${_roomUploadManager.uploadTotalCount.toString()} picture${_roomUploadManager.uploadTotalCount != 1 ? 's' : '' }...") :
+                        Text("Done"),
+                        leading: SizedBox(height: 30, width: 30,
+                          child: CircularProgressIndicator(value: progress, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                        ),
+                        backgroundColor: Colors.indigo,
+                        actions: <Widget>[
+                          Visibility(
+                            visible: progress > 0 && progress < 1,
+                            child: FlatButton(
+                              child: Text("Cancel", style: TextStyle(color: Colors.white)),
+                              onPressed: () {
+                                _animationController.reverse(); // hide banner
+                                _roomUploadManager.cancelUploads();
+                              }
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
-                  leading: Image(image: AssetImage("assets/images/loading.gif"), height: 30,),   
-                  backgroundColor: Colors.indigo,
-                  actions: <Widget>[
-                    FlatButton(
-                      child: Text("Cancel", style: TextStyle(color: Colors.white)),
-                      onPressed: _hideBanner,
-                    ),
-                  ],
                 ),
               ),
-            ),
-          );
+            );
           }
         ),
       ]
     );
   }
 
-  void _hideBanner() {
-    //reverse the animation: hide the banner out of screen
-    _animationController.reverse();
-    // setState((){});
+  void _listenForRoom() {
+    _roomStreamSubscription = Database().readRoomRealTime(_room.id).listen((room) {
+      _room.photos = room.photos;
+      _roomInitialState.photos = List.from(room.photos);
+    });
   }
 
   void _listenForRoomNotes() {
@@ -461,10 +505,45 @@ class _EditRoomState extends State<EditRoom> with TickerProviderStateMixin {
     });
   }
 
+  void _initializeRoomUploadManager() {
+    Storage().roomUploadManager(_room.id).then((uploadManager) {
+      setState(() { _roomUploadManager = uploadManager; });
+
+      _roomUploadManager.uploadedUrls.listen((url) {
+        if (!_roomUploadManager.isActive && (_animationController.status == AnimationStatus.forward ||
+                                             _animationController.status == AnimationStatus.completed)) {
+          _animationController.reverse(); // hide banner
+        }
+        _room.addPhoto(url);
+        Database().updateRoom(_room);
+      });
+    });
+  }
+
+  Future<void> _showActiveUploadDialog() async {
+    return showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: Text('Photos are currently uploading...'),
+          content: Text('Pleas wait until upload is done or cancel the upload.'),
+          actions: <Widget>[
+            FlatButton(
+              child: Text('OK'),
+              onPressed: () => Navigator.of(ctx).pop(),
+            )
+          ],
+        );
+      }
+    );
+  }
+
   @override
   void dispose() {
-    _roomNoteStreamSubscription?.cancel();
     _animationController.dispose();
+    _roomStreamSubscription?.cancel();
+    _roomNoteStreamSubscription?.cancel();
+    _roomUploadManager.dispose();
     super.dispose();
   }
 
