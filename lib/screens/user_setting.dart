@@ -456,6 +456,7 @@ class _DeleteAccountBoxState extends State<DeleteAccountBox> {
             showDialog(
               context: context,
               builder: (newContext) { //different from what have learned from CS492, the context generated from dialog builder has no scaffold context
+                _textController.text = '';
                 return AlertDialog(
                   contentPadding : const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 0.0),
                   title:
@@ -480,10 +481,26 @@ class _DeleteAccountBoxState extends State<DeleteAccountBox> {
                       child: Text('Cancel')
                     ),  
                     FlatButton(
-                      onPressed: (){
-                        // print(_textController.text);
-                        showSnackBar(context, _textController.text); //do not use newConext whe calling the snackbar
+                      onPressed: () async {
                         Navigator.of(newContext).pop();
+                        if (_textController.text.length < 6) {
+                          showSnackBar(context, 'Invalid password. Please try again.');
+                        }
+                        else {
+                          DialogManager dialogManager = DialogManager();
+                          dialogManager.showProgressHud(context);
+                          try {
+                            await Auth().deleteAccount(_textController.text);
+                            dialogManager.closeProgressHud();
+                            Navigator.of(context).pushAndRemoveUntil(
+                                MaterialPageRoute(builder: (ctx) => SignupLogin()), (_) => false
+                            );
+                          }
+                          catch (errorMsg) {
+                            dialogManager.closeProgressHud();
+                            showSnackBar(context, errorMsg); //do not use newContext whe calling the snackbar
+                          }
+                        }
                       }, 
                       child: Text('Confirm')
                     ),
@@ -500,16 +517,10 @@ class _DeleteAccountBoxState extends State<DeleteAccountBox> {
   void showSnackBar(BuildContext context, String message) {
     Scaffold.of(context).showSnackBar(
       SnackBar(
-        content: Container(
-          height: 20,
-          child: Text('invalid password!'),
-          alignment: Alignment.center,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(5))
-        ),
-        backgroundColor: Colors.black.withOpacity(0.5), 
-        elevation: 1000, 
+        content: Text(message, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(5))),
+        backgroundColor: Colors.redAccent.withOpacity(0.9),
+        elevation: 1000,
         behavior: SnackBarBehavior.floating
       )
     );   

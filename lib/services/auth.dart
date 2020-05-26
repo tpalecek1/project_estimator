@@ -26,6 +26,7 @@ abstract class AuthInterface {
   Future<String> signedInUser();
   Future<void> signOut();
   Future<void> deleteUser(String userId);
+  Future<void> deleteAccount(String password);
 }
 
 class Auth implements AuthInterface {
@@ -141,7 +142,7 @@ class Auth implements AuthInterface {
     }
     catch (error) {
       // Firebase documentation says "error can occur when accessing the keychain"...
-      throw 'Error while loging out.';
+      throw 'Error while logging out.';
     }
   }
 
@@ -162,6 +163,44 @@ class Auth implements AuthInterface {
       catch (error) {
         rethrow;
       }
+    }
+  }
+
+  Future<void> deleteAccount(String password) async {
+    FirebaseUser user = await _auth.currentUser();
+    String errorMsg = 'Sorry, something unexpected happened.\nPlease try again.';
+
+    try {                // to delete a user, user must have signed in recently
+      await _auth.signInWithEmailAndPassword(
+          email: user.email,
+          password: password
+      );
+    }
+    catch (error) {
+      switch (error.code) {
+        case 'ERROR_WRONG_PASSWORD':
+          errorMsg = 'Invalid password. Please try again.';
+          break;
+        case 'ERROR_TOO_MANY_REQUESTS':
+          errorMsg = 'Too many requests. Try again later.';
+          break;
+      }
+
+      throw errorMsg;
+    }
+
+    try {
+      await Database().deleteUser(user.uid);  // delete user documents in database
+
+      try {
+        await user.delete();                  // delete user from Firebase Auth
+      }
+      catch (error) {
+        throw errorMsg;
+      }
+    }
+    catch (error) {
+      throw errorMsg;
     }
   }
 }
