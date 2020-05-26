@@ -55,7 +55,7 @@ class _EditProjectState extends State<EditProject> {
     return WillPopScope(
       onWillPop: () async => _projectIsModified || _isProcessing ? false : true,   // disable Android system "back" button (when project is modified, or being created or deleted)
       child: Scaffold(
-        resizeToAvoidBottomInset: false, //Changes keyboard to an overlay instead of pushing the screen up
+        // resizeToAvoidBottomInset: false, //Changes keyboard to an overlay instead of pushing the screen up
         appBar: AppBar(
           automaticallyImplyLeading: false,                       // remove Flutter automatic "back" button from AppBar
           title: _project.id == null ? Text('New Project') : Text('Edit Project'),
@@ -145,147 +145,148 @@ class _EditProjectState extends State<EditProject> {
   }
 
   Widget _projectInfo() {
+    double screenWidth = MediaQuery.of(context).size.width;
     return Form(
       key: formKey,
-      child: Column(
+      child: SingleChildScrollView(
+        child: Column(
           children: [
-            Flexible(
-              flex: 9,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
+            Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Project Description',
-                        style: Theme.of(context).textTheme.display1,
-                        textAlign: TextAlign.left,
-                      ),
-                      Container(
-                          height: 50,
-                          padding: EdgeInsets.all(5),
-                          child: RaisedButton(
-                            color: Color.fromARGB(25, 255, 0, 0),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
-                              side: BorderSide(color: Colors.red[400], width: 1.1)
-                            ),
-                            child: Text('Delete'),
-                            onPressed: () => {
-                              showDialog(context: context,
-                                builder: (ctx){
-                                  return AlertDialog(
-                                    title: Text("Are you sure you want to permanently delete this project?"),
-                                    content: Text("Note: this cannot be undone"),
-                                    actions: [
-                                      FlatButton(
-                                        onPressed: (){
-                                          Navigator.of(ctx).pop();
-                                        },
-                                        child: Icon(Icons.cancel),
-                                      ),
-                                      FlatButton(
-                                        onPressed: () async {
-                                          Navigator.of(ctx).pop();
-                                          setState(() { _isProcessing = true; _projectIsModified = true; });
-                                          await Database().deleteProject(_project.id);
-                                          Navigator.popUntil(context, (route) => route.isFirst);
-                                        },
-                                        child: Icon(Icons.check),
-                                      )
-                                    ],
-                                  );
-                                }
-                              )
-                            },
-                          ),
-                        ),
-                    ]
-                  ),
-                  Container(
-                    padding: EdgeInsets.all(5),
-                    child: _projectName(),
-                  ),
-                  Container(
-                    height: 46,
-                    padding: EdgeInsets.all(5),
-                    child: TextFormField(
-                      initialValue: _project.clientName,
+                  Expanded(
+                    child: Text(
+                      'Project Description',
+                      style: Theme.of(context).textTheme.display1,
                       textAlign: TextAlign.left,
-                      keyboardType: TextInputType.text,
-                      decoration: InputDecoration(
-                        labelText: 'Customer Name',
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-                      ),
-                      onSaved: (clientName) => _project.clientName = clientName.trim(),
-                      validator: (clientName) => null,
                     ),
                   ),
                   Container(
-                    height: 46,
+                    height: 50,
                     padding: EdgeInsets.all(5),
-                    child: TextFormField(
-                      autovalidate: _hasInvalidInput ? true : false,
-                      initialValue: _project.clientAddress,
-                      textAlign: TextAlign.left,
-                      keyboardType: TextInputType.text,
-                      decoration: InputDecoration(
-                        labelText: 'Address',
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                    child: RaisedButton(
+                      color: Color.fromARGB(25, 255, 0, 0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        side: BorderSide(color: Colors.red[400], width: 1.1)
                       ),
-                      onSaved: (address) => _project.clientAddress = address.trim(),
-                      validator: (address) => null,
-                    ),
-                  ),
-                  Container(
-                    height: 46,
-                    padding: EdgeInsets.all(5),
-                    child: TextFormField(
-                      autovalidate: _hasInvalidInput ? true : false,
-                      initialValue: _project.description,
-                      textAlign: TextAlign.left,
-                      keyboardType: TextInputType.text,
-                      decoration: InputDecoration(
-                        labelText: 'Description',
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-                      ),
-                      onSaved: (description) => _project.description = description.trim(),
-                      validator: (description) => null,
-                    ),
-                  ),
-                  Container(
-                    height: 46,
-                    padding: EdgeInsets.all(5),
-                    child: DropdownButtonFormField(
-                      items: <String>['not bid', 'bid', 'not awarded', 'awarded', 'started', 'complete'].map<DropdownMenuItem<String>>((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
+                      child: Text('Delete'),
+                      onPressed: () => {
+                        showDialog(context: context,
+                          builder: (ctx){
+                            return AlertDialog(
+                              title: Text("Are you sure you want to permanently delete this project?"),
+                              content: Text("Note: this cannot be undone"),
+                              actions: [
+                                FlatButton(
+                                  onPressed: (){
+                                    Navigator.of(ctx).pop();
+                                  },
+                                  child: Icon(Icons.cancel),
+                                ),
+                                FlatButton(
+                                  onPressed: () async {
+                                    Navigator.of(ctx).pop();
+                                    setState(() { _isProcessing = true; _projectIsModified = true; });
+                                    await Database().deleteProject(_project.id);
+                                    Navigator.popUntil(context, (route) => route.isFirst);
+                                  },
+                                  child: Icon(Icons.check),
+                                )
+                              ],
                             );
-                          }).toList(),
-                          onChanged: (newValue){
-                            _project.status = newValue;
-                            setState(() {
-                              _dropdownValue = newValue;
-                            });
-                          },
-                        value: _dropdownValue,
-                        decoration: InputDecoration(
-                          labelText: 'Status',
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 20),
-                        ),
+                          }
+                        )
+                      },
                     ),
                   ),
-                ],),
-            ),
-            Flexible(
-              flex: 2,
-              fit: FlexFit.tight,
+                ]
+              ),
+              Container(
+                padding: EdgeInsets.all(5),
+                child: _projectName(),
+              ),
+              Container(
+                height: 46,
+                padding: EdgeInsets.all(5),
+                child: TextFormField(
+                  initialValue: _project.clientName,
+                  textAlign: TextAlign.left,
+                  keyboardType: TextInputType.text,
+                  decoration: InputDecoration(
+                    labelText: 'Customer Name',
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                  ),
+                  onSaved: (clientName) => _project.clientName = clientName.trim(),
+                  validator: (clientName) => null,
+                ),
+              ),
+              Container(
+                height: 46,
+                padding: EdgeInsets.all(5),
+                child: TextFormField(
+                  autovalidate: _hasInvalidInput ? true : false,
+                  initialValue: _project.clientAddress,
+                  textAlign: TextAlign.left,
+                  keyboardType: TextInputType.text,
+                  decoration: InputDecoration(
+                    labelText: 'Address',
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                  ),
+                  onSaved: (address) => _project.clientAddress = address.trim(),
+                  validator: (address) => null,
+                ),
+              ),
+              Container(
+                height: 46,
+                padding: EdgeInsets.all(5),
+                child: TextFormField(
+                  autovalidate: _hasInvalidInput ? true : false,
+                  initialValue: _project.description,
+                  textAlign: TextAlign.left,
+                  keyboardType: TextInputType.text,
+                  decoration: InputDecoration(
+                    labelText: 'Description',
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                  ),
+                  onSaved: (description) => _project.description = description.trim(),
+                  validator: (description) => null,
+                ),
+              ),
+              Container(
+                // height: 46,
+                padding: EdgeInsets.all(5),
+                child: DropdownButtonFormField(
+                  items: <String>['not bid', 'bid', 'not awarded', 'awarded', 'started', 'complete'].map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                      onChanged: (newValue){
+                        _project.status = newValue;
+                        setState(() {
+                          _dropdownValue = newValue;
+                        });
+                      },
+                    value: _dropdownValue,
+                    decoration: InputDecoration(
+                      labelText: 'Status',
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 20),
+                    ),
+                ),
+              ),
+            ],),
+            Container(
+              width: screenWidth,
+              height: 60,
               child: Row(
                 children: [
                   Expanded(
@@ -324,9 +325,9 @@ class _EditProjectState extends State<EditProject> {
                 ],
               ),
             ),
-            Flexible(
-              flex: 2,
-              fit: FlexFit.tight,
+            Container(
+              width: screenWidth,
+              height: 60,
               child: Center(
                 child: CustomButton1(
                   onPressed: () {
@@ -339,9 +340,9 @@ class _EditProjectState extends State<EditProject> {
                 )
               )
             ),
-            Flexible(
-              flex: 1,
-              fit: FlexFit.tight,
+            Container(
+              width: screenWidth,
+              height: 60,
               child: Container(
                 padding: EdgeInsets.only(left: 5),
                 child: Align(
@@ -352,11 +353,13 @@ class _EditProjectState extends State<EditProject> {
                 )
               )
             ),
-            Flexible(
-              flex: 4,
+            Container(
+              width: screenWidth,
               child: _rooms == null ?
               Center(child: CircularProgressIndicator()) :
               ListView.builder(
+                physics: ScrollPhysics(),
+                shrinkWrap: true,
                 itemCount: _rooms.length,
                 itemBuilder: (context, index){
                 return Container(
@@ -419,7 +422,8 @@ class _EditProjectState extends State<EditProject> {
               }),
             ),
           ]
-        )
+        ),
+      )
     );
   }
   
