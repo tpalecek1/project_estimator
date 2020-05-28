@@ -19,14 +19,14 @@ class DownloadPdf extends StatelessWidget {
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.check),
         onPressed: () async {
-          formKey.currentState.validate();
-          formKey.currentState.save();
-          Directory downloadsDirectory = await DownloadsPathProvider.downloadsDirectory;
-          String downloadFilePath = '${downloadsDirectory.path}/$fileName.pdf';
-          File file = File(downloadFilePath);
-          file.writeAsBytesSync(pdf.save());
-          print('Saved to downloads');
-          Navigator.of(context).pop(Navigator.of(context).pop());
+          if(formKey.currentState.validate()){
+            formKey.currentState.save();
+            Directory downloadsDirectory = await DownloadsPathProvider.downloadsDirectory;
+            String downloadFilePath = '${downloadsDirectory.path}/$fileName.pdf';
+            File file = File(downloadFilePath);
+            file.writeAsBytesSync(pdf.save());
+            Navigator.of(context).pop(Navigator.of(context).pop());
+          }
         }),
       body: Center(
         child: Padding(
@@ -54,7 +54,17 @@ class DownloadPdf extends StatelessWidget {
                   onSaved: (name){
                     fileName = name;
                   },
-                  validator: (name) => name.trim().length == 0 ? 'File name can\'t be empty' : null,
+                  validator: (name){
+                    if(name.trim().length == 0){
+                      return 'File name can\'t be empty';
+                    }
+                    else if(name.contains(RegExp('[^a-zA-Z0-9]'))){
+                      return 'File name can\'t contain special characters';
+                    }
+                    else{
+                      return null;
+                    }
+                  } 
                 ),
               ]
             ),

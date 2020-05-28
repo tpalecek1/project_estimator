@@ -10,7 +10,7 @@ import '../models/user.dart';
 import '../models/paint_settings.dart';
 import 'package:project_estimator/services/database.dart';
 import 'pdf_preview.dart';
-import 'download_pdf.dart';
+import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -56,7 +56,7 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
     if (estimate == null) {
       generateEstimate();
     }
-    else if(estimate.items.length == 0){ //Temporary... ask user if they want to generate an estimate
+    else if(estimate.items.length == 0){
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         await showDialog(
             context: context,
@@ -108,8 +108,12 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
           floatingActionButton: FloatingActionButton(
               child: Icon(Icons.save),
               onPressed: () {
-                project.estimate = estimate;
-                Database().updateProject(project);
+                if(formKey.currentState.validate()){
+                  formKey.currentState.save();
+                  project.estimate = estimate;
+                  Database().updateProject(project);
+                  setState(() {});
+                }
               }
           ),
           endDrawer: Drawer(
@@ -240,6 +244,12 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                                       maxLines: 3,
                                       minLines: 1,
                                       initialValue: estimate.items[index].name,
+                                      validator: (String value){
+                                        return value.length < 1 ? 'Please enter a description' : null;
+                                      },
+                                      onSaved: (String value){
+                                        estimate.items[index].name = value;
+                                      },
                                     ),
                                   ),
                                 ],
@@ -251,11 +261,24 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                                       Text("\$ "),
                                       Expanded(
                                         child: TextFormField(
-                                          initialValue: estimate.items[index].cost.toString(),
-                                          onChanged: (value){
+                                          initialValue: estimate.items[index].cost.toStringAsFixed(2),
+                                          onSaved: (String value){
+                                            if(value == "") value = '0';
                                             estimate.items[index].cost = double.tryParse(value);
-                                            setState(() {});
                                           },
+                                          validator: (String value){
+                                            if(value == "") value = "0";
+                                            return double.tryParse(value) == null ? 'Invalid input' : null;
+                                          },
+                                          /* onChanged: (value){
+                                            if(value == null){
+                                              estimate.items[index].cost = 0;
+                                            }
+                                            else{
+                                              estimate.items[index].cost = double.tryParse(value);
+                                            }
+                                            setState(() {});
+                                          }, */
                                           keyboardType: TextInputType.numberWithOptions(),
                                         ),
                                       ),
@@ -284,7 +307,7 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                                       textAlign: TextAlign.left,
                                     ),
                                     Text(
-                                      '\$ ' + estimate.subtotal().toString(),
+                                      '\$ ' + estimate.subtotal().toStringAsFixed(2),
                                       style: Theme.of(context).textTheme.title,
                                       textAlign: TextAlign.right,
                                     ),
@@ -429,14 +452,16 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
     else{
       int itemsWritten = 0;
       int itemsToWrite;
+      int pageNo = 1;
       while(itemsWritten < estimate.items.length - 8){
         itemsToWrite = estimate.items.length - itemsWritten;
         if(itemsToWrite > 14) itemsToWrite = 14;
-        writeFirstPage(theme, itemsToWrite, itemsWritten);
+        writeFirstPage(theme, itemsToWrite, itemsWritten, pageNo);
+        pageNo += 1;
         itemsWritten += itemsToWrite;
       }
       itemsToWrite = estimate.items.length - itemsWritten;
-      writeLastPage(theme, itemsToWrite, itemsWritten);
+      writeLastPage(theme, itemsToWrite, itemsWritten, pageNo);
       print(itemsWritten);
     }
   }
@@ -455,10 +480,6 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                 pw.Paragraph(text: 'Page No. 1 of 1')
               ],
             ),
-            pw.Align(
-              alignment: pw.Alignment.topLeft,
-              child: pw.Paragraph(text: 'Expires: xx', textAlign: pw.TextAlign.left)
-            )
           ],
         );
       },
@@ -522,20 +543,80 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
             children: [
               pw.TableRow(
                 children: [
-                  pw.Paragraph(text: 'Submitted to', padding: pw.EdgeInsets.only(left: 3)),
-                  pw.Paragraph(text: 'Today\'s date', padding: pw.EdgeInsets.only(left: 3)), 
+                  pw.Row(
+                    mainAxisSize: pw.MainAxisSize.min,
+                    children: [
+                      pw.Paragraph(text: 'Submitted to', padding: pw.EdgeInsets.only(left: 3)),
+                      pw.Text('${project.clientName}', 
+                        textAlign: pw.TextAlign.right,
+                        style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 14,
+                        )
+                      )
+                    ]
+                  ),
+                  pw.Row(
+                    mainAxisSize: pw.MainAxisSize.min,
+                    children: [
+                      pw.Paragraph(text: 'Today\'s Date', padding: pw.EdgeInsets.only(left: 3)),
+                      pw.Text('${DateFormat('MMM dd, yyyy').format(DateTime.now())}', 
+                        textAlign: pw.TextAlign.right,
+                        style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 14,
+                        )
+                      )
+                    ]
+                  ),
                 ],
               ),
               pw.TableRow(
                 children: [
-                  pw.Paragraph(text: 'Phone Number', padding: pw.EdgeInsets.only(left: 3)),
-                  pw.Paragraph(text: 'Job Name', padding: pw.EdgeInsets.only(left: 3)), 
+                  pw.Row(
+                    mainAxisSize: pw.MainAxisSize.min,
+                    children: [
+                      pw.Paragraph(text: 'Phone Number', padding: pw.EdgeInsets.only(left: 3)),
+                      pw.Text('${project.clientPhoneNumber}', 
+                        textAlign: pw.TextAlign.right,
+                        style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 14,
+                        )
+                      )
+                    ]
+                  ),
+                  pw.Row(
+                    mainAxisSize: pw.MainAxisSize.min,
+                    children: [
+                      pw.Paragraph(text: 'Project Name', padding: pw.EdgeInsets.only(left: 3)),
+                      pw.Text('${project.name}', 
+                        textAlign: pw.TextAlign.right,
+                        style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 14,
+                        )
+                      )
+                    ]
+                  ),
                 ],
               ),
               pw.TableRow(
                 children: [
-                  pw.Paragraph(text: 'Project address', padding: pw.EdgeInsets.only(left: 3)),
-                  pw.Paragraph(text: 'Project Name', padding: pw.EdgeInsets.only(left: 3)), 
+                  pw.Row(
+                    mainAxisSize: pw.MainAxisSize.min,
+                    children: [
+                      pw.Paragraph(text: 'Project Address', padding: pw.EdgeInsets.only(left: 3)),
+                      pw.Text('${project.clientAddress}', 
+                        textAlign: pw.TextAlign.right,
+                        style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 14,
+                        )
+                      )
+                    ]
+                  ),
+                  pw.Paragraph(text: '', padding: pw.EdgeInsets.only(left: 3)), 
                 ],
               ),
             ],
@@ -568,8 +649,7 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
     ));
   }
 
-  void writeFirstPage(pw.ThemeData theme, int itemsToWrite, int itemsWritten){
-    int pageNo = (itemsWritten / 14).ceil();
+  void writeFirstPage(pw.ThemeData theme, int itemsToWrite, int itemsWritten, int pageNo){
     if(pageNo == 0) pageNo = 1;
     pdf.addPage(pw.Page(
       theme: theme,
@@ -584,13 +664,9 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
                     pw.Paragraph(text: "License # ${user.licenseNumber}"),
-                    pw.Paragraph(text: 'Page No. $pageNo of ${(estimate.items.length / 14).ceil()}')
+                    pw.Paragraph(text: 'Page No. $pageNo')
                   ],
                 ),
-                pw.Align(
-                  alignment: pw.Alignment.topLeft,
-                  child: pw.Paragraph(text: 'Expires: xx', textAlign: pw.TextAlign.left)
-                )
               ],
             ),
               pw.Header(
@@ -600,29 +676,90 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                   child: pw.Text('Proposal', style: pw.TextStyle(fontSize: 36)),
                 ),
               ),
-              pw.Table(
-                  border: pw.TableBorder(),
+          pw.Table(
+
+            border: pw.TableBorder(),
+            children: [
+              pw.TableRow(
                 children: [
-                  pw.TableRow(
+                  pw.Row(
+                    mainAxisSize: pw.MainAxisSize.min,
                     children: [
                       pw.Paragraph(text: 'Submitted to', padding: pw.EdgeInsets.only(left: 3)),
-                      pw.Paragraph(text: 'Today\'s date', padding: pw.EdgeInsets.only(left: 3)), 
-                    ],
+                      pw.Text('${project.clientName}', 
+                        textAlign: pw.TextAlign.right,
+                        style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 14,
+                        )
+                      )
+                    ]
                   ),
-                  pw.TableRow(
+                  pw.Row(
+                    mainAxisSize: pw.MainAxisSize.min,
                     children: [
-                      pw.Paragraph(text: 'Phone Number', padding: pw.EdgeInsets.only(left: 3)),
-                      pw.Paragraph(text: 'Job Name', padding: pw.EdgeInsets.only(left: 3)), 
-                    ],
-                  ),
-                  pw.TableRow(
-                    children: [
-                      pw.Paragraph(text: 'Project address', padding: pw.EdgeInsets.only(left: 3)),
-                      pw.Paragraph(text: 'Project Name', padding: pw.EdgeInsets.only(left: 3)), 
-                    ],
+                      pw.Paragraph(text: 'Today\'s Date', padding: pw.EdgeInsets.only(left: 3)),
+                      pw.Text('${DateFormat('MMM dd, yyyy').format(DateTime.now())}', 
+                        textAlign: pw.TextAlign.right,
+                        style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 14,
+                        )
+                      )
+                    ]
                   ),
                 ],
               ),
+              pw.TableRow(
+                children: [
+                  pw.Row(
+                    mainAxisSize: pw.MainAxisSize.min,
+                    children: [
+                      pw.Paragraph(text: 'Phone Number', padding: pw.EdgeInsets.only(left: 3)),
+                      pw.Text('${project.clientPhoneNumber}', 
+                        textAlign: pw.TextAlign.right,
+                        style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 14,
+                        )
+                      )
+                    ]
+                  ),
+                  pw.Row(
+                    mainAxisSize: pw.MainAxisSize.min,
+                    children: [
+                      pw.Paragraph(text: 'Project Name', padding: pw.EdgeInsets.only(left: 3)),
+                      pw.Text('${project.name}', 
+                        textAlign: pw.TextAlign.right,
+                        style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 14,
+                        )
+                      )
+                    ]
+                  ),
+                ],
+              ),
+              pw.TableRow(
+                children: [
+                  pw.Row(
+                    mainAxisSize: pw.MainAxisSize.min,
+                    children: [
+                      pw.Paragraph(text: 'Project Address', padding: pw.EdgeInsets.only(left: 3)),
+                      pw.Text('${project.clientAddress}', 
+                        textAlign: pw.TextAlign.right,
+                        style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 14,
+                        )
+                      )
+                    ]
+                  ),
+                  pw.Paragraph(text: '', padding: pw.EdgeInsets.only(left: 3)), 
+                ],
+              ),
+            ],
+          ),
               pw.Align(
                 alignment: pw.Alignment.topLeft,
                 child: pw.Paragraph(text: 'We propose hereby to furnish material and labor necessary for the completion of:')
@@ -652,7 +789,7 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
     ));
   }
   
-  void writeLastPage(pw.ThemeData theme, int itemsToWrite, int itemsWritten){
+  void writeLastPage(pw.ThemeData theme, int itemsToWrite, int itemsWritten, int pageNo){
     pdf.addPage(pw.Page(
       theme: theme,
       pageFormat: PdfPageFormat.a4,
@@ -666,13 +803,9 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
                     pw.Paragraph(text: "License # ${user.licenseNumber}"),
-                    pw.Paragraph(text: 'Page No. ${(estimate.items.length / 14).ceil()} of ${(estimate.items.length / 14).ceil()}')
+                    pw.Paragraph(text: 'Page No. $pageNo of $pageNo')
                   ],
                 ),
-/*                 pw.Align(
-                  alignment: pw.Alignment.topLeft,
-                  child: pw.Paragraph(text: 'Expires: xx', textAlign: pw.TextAlign.left)
-                ) */
               ],
             ),
               pw.Header(
@@ -682,29 +815,89 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                   child: pw.Text('Proposal', style: pw.TextStyle(fontSize: 36)),
                 ),
               ),
-              pw.Table(
-                  border: pw.TableBorder(),
-                children: [
-                  pw.TableRow(
-                    children: [
-                      pw.Paragraph(text: 'Submitted to', padding: pw.EdgeInsets.only(left: 3)),
-                      pw.Paragraph(text: 'Today\'s date', padding: pw.EdgeInsets.only(left: 3)), 
-                    ],
-                  ),
-                  pw.TableRow(
-                    children: [
-                      pw.Paragraph(text: 'Phone Number', padding: pw.EdgeInsets.only(left: 3)),
-                      pw.Paragraph(text: 'Job Name', padding: pw.EdgeInsets.only(left: 3)), 
-                    ],
-                  ),
-                  pw.TableRow(
-                    children: [
-                      pw.Paragraph(text: 'Project address', padding: pw.EdgeInsets.only(left: 3)),
-                      pw.Paragraph(text: 'Project Name', padding: pw.EdgeInsets.only(left: 3)), 
-                    ],
-                  ),
-                ],
-              ),
+            pw.Table(
+              border: pw.TableBorder(),
+              children: [
+                pw.TableRow(
+                  children: [
+                    pw.Row(
+                      mainAxisSize: pw.MainAxisSize.min,
+                      children: [
+                        pw.Paragraph(text: 'Submitted to', padding: pw.EdgeInsets.only(left: 3)),
+                        pw.Text('${project.clientName}', 
+                          textAlign: pw.TextAlign.right,
+                          style: pw.TextStyle(
+                            fontWeight: pw.FontWeight.bold,
+                            fontSize: 14,
+                          )
+                        )
+                      ]
+                    ),
+                    pw.Row(
+                      mainAxisSize: pw.MainAxisSize.min,
+                      children: [
+                        pw.Paragraph(text: 'Today\'s Date', padding: pw.EdgeInsets.only(left: 3)),
+                        pw.Text('${DateFormat('MMM dd, yyyy').format(DateTime.now())}', 
+                          textAlign: pw.TextAlign.right,
+                          style: pw.TextStyle(
+                            fontWeight: pw.FontWeight.bold,
+                            fontSize: 14,
+                          )
+                        )
+                      ]
+                    ),
+                  ],
+                ),
+                pw.TableRow(
+                  children: [
+                    pw.Row(
+                      mainAxisSize: pw.MainAxisSize.min,
+                      children: [
+                        pw.Paragraph(text: 'Phone Number', padding: pw.EdgeInsets.only(left: 3)),
+                        pw.Text('${project.clientPhoneNumber}', 
+                          textAlign: pw.TextAlign.right,
+                          style: pw.TextStyle(
+                            fontWeight: pw.FontWeight.bold,
+                            fontSize: 14,
+                          )
+                        )
+                      ]
+                    ),
+                    pw.Row(
+                      mainAxisSize: pw.MainAxisSize.min,
+                      children: [
+                        pw.Paragraph(text: 'Project Name', padding: pw.EdgeInsets.only(left: 3)),
+                        pw.Text('${project.name}', 
+                          textAlign: pw.TextAlign.right,
+                          style: pw.TextStyle(
+                            fontWeight: pw.FontWeight.bold,
+                            fontSize: 14,
+                          )
+                        )
+                      ]
+                    ),
+                  ],
+                ),
+                pw.TableRow(
+                  children: [
+                    pw.Row(
+                      mainAxisSize: pw.MainAxisSize.min,
+                      children: [
+                        pw.Paragraph(text: 'Project Address', padding: pw.EdgeInsets.only(left: 3)),
+                        pw.Text('${project.clientAddress}', 
+                          textAlign: pw.TextAlign.right,
+                          style: pw.TextStyle(
+                            fontWeight: pw.FontWeight.bold,
+                            fontSize: 14,
+                          )
+                        )
+                      ]
+                    ),
+                    pw.Paragraph(text: '', padding: pw.EdgeInsets.only(left: 3)), 
+                  ],
+                ),
+              ],
+            ),
               pw.Align(
                 alignment: pw.Alignment.topLeft,
                 child: pw.Paragraph(text: 'We propose hereby to furnish material and labor necessary for the completion of:')
