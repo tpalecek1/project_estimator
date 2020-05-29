@@ -56,7 +56,7 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
     if (estimate == null) {
       generateEstimate();
     }
-    else if(estimate.items.length == 0){ //Temporary... ask user if they want to generate an estimate
+    else if(estimate.items.length == 0){
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         await showDialog(
             context: context,
@@ -132,10 +132,12 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                                   ),
                                   FlatButton(
                                     child: Text("Accept"),
-                                    onPressed: (){
+                                    onPressed: () async {
                                       Navigator.of(context).pop();  // close AlertDialog
                                       Navigator.of(context).pop();  // close Drawer
-                                      generateEstimate();
+                                      await generateEstimate();
+                                      project.estimate = estimate;
+                                      Database().updateProject(project);
                                     },
                                   ),
                                 ],
@@ -371,7 +373,7 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
 
   }
 
-  void generateEstimate() async {
+  Future<void> generateEstimate() async {
     setState(() { _isProcessing = true; });
 
     // get project and room notes
