@@ -186,171 +186,175 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                 ],
               )
           ),
-          body: Form(
-              key: formKey,
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(height: 10,),
-                    Text(
-                      'Project: ${project.name}',
-                      style: Theme.of(context).textTheme.title,
-                      textAlign: TextAlign.left,
-                    ),
-                    Divider(color: Colors.black38, thickness: 1, endIndent: 50, height: 20),
-                    Text(
-                      'Scope of work',
-                      style: Theme.of(context).textTheme.title,
-                      textAlign: TextAlign.left,
-                    ),
-                    Flexible(
-                      flex: 5,
-                      child: ListView.builder(
-                        itemCount: estimate.items.length+1,
-                        itemBuilder: (context, index){
-                          if(index == estimate.items.length){
-                            return Container(height: 40, width: 50,
-                                child: SizedBox(width: 50,
-                                    child: FlatButton(
-                                      child: Text("Add Scope Item"),
-                                      onPressed: (){
-                                        estimate.addItem("New Item", 0);
-                                        setState((){});
-                                      },
+          body: GestureDetector(
+            onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
+            child: Form(
+                key: formKey,
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(height: 10,),
+                      Text(
+                        'Project: ${project.name}',
+                        style: Theme.of(context).textTheme.title,
+                        textAlign: TextAlign.left,
+                      ),
+                      Divider(color: Colors.black38, thickness: 1, endIndent: 50, height: 20),
+                      Text(
+                        'Scope of work',
+                        style: Theme.of(context).textTheme.title,
+                        textAlign: TextAlign.left,
+                      ),
+                      Flexible(
+                        flex: 5,
+                        child: ListView.builder(
+                          itemCount: estimate.items.length+1,
+                          itemBuilder: (context, index){
+                            if(index == estimate.items.length){
+                              return Container(height: 40, width: 50,
+                                  child: SizedBox(width: 50,
+                                      child: FlatButton(
+                                        child: Text("Add Scope Item"),
+                                        onPressed: (){
+                                          estimate.addItem("New Item", 0);
+                                          setState((){});
+                                        },
+                                      )
+                                  )
+                              );
+                            }
+                            return ListTile(
+                                key: ObjectKey(estimate.items[index]),
+                                title: Row(
+                                  children: <Widget>[
+                                    ButtonTheme(
+                                      padding: EdgeInsets.only(right: 5),
+                                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      minWidth: 0,
+                                      height: 0,
+                                      child: FlatButton(
+                                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                        child: Icon(Icons.delete_forever),
+                                        onPressed: (){
+                                          estimate.removeItem(estimate.items[index]);
+                                          setState(() { });
+                                        },
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: TextFormField(
+                                        keyboardType: TextInputType.text,
+                                        maxLines: 3,
+                                        minLines: 1,
+                                        initialValue: estimate.items[index].name,
+                                        validator: (String value){
+                                          return value.length < 1 ? 'Please enter a description' : null;
+                                        },
+                                        onSaved: (String value){
+                                          estimate.items[index].name = value;
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                trailing: Container(
+                                    width: 90,
+                                    child: Row(
+                                      children: [
+                                        Text("\$ "),
+                                        Expanded(
+                                          child: TextFormField(
+                                            initialValue: estimate.items[index].cost.toStringAsFixed(2),
+                                            onSaved: (String value){
+                                              if(value == "") value = '0';
+                                              estimate.items[index].cost = double.tryParse(value);
+                                            },
+                                            validator: (String value){
+                                              if(value == "") value = "0";
+                                              return double.tryParse(value) == null ? 'Invalid input' : null;
+                                            },
+                                            /* onChanged: (value){
+                                              if(value == null){
+                                                estimate.items[index].cost = 0;
+                                              }
+                                              else{
+                                                estimate.items[index].cost = double.tryParse(value);
+                                              }
+                                              setState(() {});
+                                            }, */
+                                            keyboardType: TextInputType.numberWithOptions(),
+                                          ),
+                                        ),
+                                      ],
                                     )
                                 )
                             );
-                          }
-                          return ListTile(
-                              key: ObjectKey(estimate.items[index]),
-                              title: Row(
-                                children: <Widget>[
-                                  ButtonTheme(
-                                    padding: EdgeInsets.only(right: 5),
-                                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                    minWidth: 0,
-                                    height: 0,
-                                    child: FlatButton(
-                                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                      child: Icon(Icons.delete_forever),
-                                      onPressed: (){
-                                        estimate.removeItem(estimate.items[index]);
-                                        setState(() { });
-                                      },
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: TextFormField(
-                                      maxLines: 3,
-                                      minLines: 1,
-                                      initialValue: estimate.items[index].name,
-                                      validator: (String value){
-                                        return value.length < 1 ? 'Please enter a description' : null;
-                                      },
-                                      onSaved: (String value){
-                                        estimate.items[index].name = value;
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              trailing: Container(
-                                  width: 90,
-                                  child: Row(
-                                    children: [
-                                      Text("\$ "),
-                                      Expanded(
-                                        child: TextFormField(
-                                          initialValue: estimate.items[index].cost.toStringAsFixed(2),
-                                          onSaved: (String value){
-                                            if(value == "") value = '0';
-                                            estimate.items[index].cost = double.tryParse(value);
-                                          },
-                                          validator: (String value){
-                                            if(value == "") value = "0";
-                                            return double.tryParse(value) == null ? 'Invalid input' : null;
-                                          },
-                                          /* onChanged: (value){
-                                            if(value == null){
-                                              estimate.items[index].cost = 0;
-                                            }
-                                            else{
-                                              estimate.items[index].cost = double.tryParse(value);
-                                            }
-                                            setState(() {});
-                                          }, */
-                                          keyboardType: TextInputType.numberWithOptions(),
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                              )
-                          );
-                        },
-                      ),
-                    ),
-                    Flexible(flex: 3,
-                      child: Align(
-                        alignment: Alignment.topRight,
-                        child: Container(
-                            padding: EdgeInsets.all(10),
-                            width: MediaQuery.of(context).size.width * .7,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Subtotal:',
-                                      style: Theme.of(context).textTheme.title,
-                                      textAlign: TextAlign.left,
-                                    ),
-                                    Text(
-                                      '\$ ' + estimate.subtotal().toStringAsFixed(2),
-                                      style: Theme.of(context).textTheme.title,
-                                      textAlign: TextAlign.right,
-                                    ),
-                                  ],
-                                ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Tax:',
-                                      style: Theme.of(context).textTheme.title,
-                                      textAlign: TextAlign.left,
-                                    ),
-                                    Text(
-                                      (estimate.subtotal() * 0.0725).toStringAsFixed(2),
-                                      style: Theme.of(context).textTheme.title,
-                                      textAlign: TextAlign.right,
-                                    ),
-                                  ],
-                                ),
-                                Divider(height: 40, color: Colors.black),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Total:',
-                                      style: Theme.of(context).textTheme.title,
-                                      textAlign: TextAlign.left,
-                                    ),
-                                    Text(
-                                      (estimate.subtotal() * 0.0725 + estimate.subtotal()).toStringAsFixed(2),
-                                      style: Theme.of(context).textTheme.title,
-                                      textAlign: TextAlign.right,
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            )
+                          },
                         ),
                       ),
-                    ),
-                  ]
-              )
+                      Flexible(flex: 3,
+                        child: Align(
+                          alignment: Alignment.topRight,
+                          child: Container(
+                              padding: EdgeInsets.all(10),
+                              width: MediaQuery.of(context).size.width * .7,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Subtotal:',
+                                        style: Theme.of(context).textTheme.title,
+                                        textAlign: TextAlign.left,
+                                      ),
+                                      Text(
+                                        '\$ ' + estimate.subtotal().toStringAsFixed(2),
+                                        style: Theme.of(context).textTheme.title,
+                                        textAlign: TextAlign.right,
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Tax:',
+                                        style: Theme.of(context).textTheme.title,
+                                        textAlign: TextAlign.left,
+                                      ),
+                                      Text(
+                                        (estimate.subtotal() * 0.0725).toStringAsFixed(2),
+                                        style: Theme.of(context).textTheme.title,
+                                        textAlign: TextAlign.right,
+                                      ),
+                                    ],
+                                  ),
+                                  Divider(height: 40, color: Colors.black),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Total:',
+                                        style: Theme.of(context).textTheme.title,
+                                        textAlign: TextAlign.left,
+                                      ),
+                                      Text(
+                                        (estimate.subtotal() * 0.0725 + estimate.subtotal()).toStringAsFixed(2),
+                                        style: Theme.of(context).textTheme.title,
+                                        textAlign: TextAlign.right,
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              )
+                          ),
+                        ),
+                      ),
+                    ]
+                )
+            )
           )
       );
     }
