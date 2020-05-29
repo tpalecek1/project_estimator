@@ -197,13 +197,13 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                     children: [
                       Container(height: 10,),
                       Text(
-                        'Project: ${project.name}',
+                        ' Project: ${project.name}',
                         style: Theme.of(context).textTheme.title,
                         textAlign: TextAlign.left,
                       ),
                       Divider(color: Colors.black38, thickness: 1, endIndent: 50, height: 20),
                       Text(
-                        'Scope of work',
+                        ' Scope of work',
                         style: Theme.of(context).textTheme.title,
                         textAlign: TextAlign.left,
                       ),
