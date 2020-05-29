@@ -89,7 +89,10 @@ class _EditRoomState extends State<EditRoom> with TickerProviderStateMixin {
               ),
             ],
           ),
-          body: _body(context),
+          body: GestureDetector(
+            onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
+            child: _body(context),
+          ),
           floatingActionButton: Visibility(
               visible: _isProcessing ? false : true,
               child: FloatingActionButton(

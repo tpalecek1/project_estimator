@@ -295,7 +295,13 @@ class _RoomDetailState extends State<RoomDetail> {
                 itemBuilder: (context, index) {
                   return Card(
                     child: ListTile(
-                      title: Text('${_notes[index].description}'),
+                      enabled: false,
+                      title: Text(
+                        '${_notes[index].description}',
+                        style: TextStyle(
+                          color: Colors.black,
+                        ),
+                      ),
                       onTap: () {
                         //
                       },

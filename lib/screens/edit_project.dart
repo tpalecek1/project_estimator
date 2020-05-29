@@ -71,7 +71,10 @@ class _EditProjectState extends State<EditProject> {
             ),
           ],
         ),
-        body: _body(),
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
+          child: _body(),
+        ),
         floatingActionButton: Visibility(
           visible: _isProcessing ? false : true,
           child: FloatingActionButton(

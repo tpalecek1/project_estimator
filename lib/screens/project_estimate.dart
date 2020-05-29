@@ -10,7 +10,7 @@ import '../models/user.dart';
 import '../models/paint_settings.dart';
 import 'package:project_estimator/services/database.dart';
 import 'pdf_preview.dart';
-import 'download_pdf.dart';
+import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -108,8 +108,12 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
           floatingActionButton: FloatingActionButton(
               child: Icon(Icons.save),
               onPressed: () {
-                project.estimate = estimate;
-                Database().updateProject(project);
+                if(formKey.currentState.validate()){
+                  formKey.currentState.save();
+                  project.estimate = estimate;
+                  Database().updateProject(project);
+                  setState(() {});
+                }
               }
           ),
           endDrawer: Drawer(
@@ -184,152 +188,175 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                 ],
               )
           ),
-          body: Form(
-              key: formKey,
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(height: 10,),
-                    Text(
-                      'Project: ${project.name}',
-                      style: Theme.of(context).textTheme.title,
-                      textAlign: TextAlign.left,
-                    ),
-                    Divider(color: Colors.black38, thickness: 1, endIndent: 50, height: 20),
-                    Text(
-                      'Scope of work',
-                      style: Theme.of(context).textTheme.title,
-                      textAlign: TextAlign.left,
-                    ),
-                    Flexible(
-                      flex: 5,
-                      child: ListView.builder(
-                        itemCount: estimate.items.length+1,
-                        itemBuilder: (context, index){
-                          if(index == estimate.items.length){
-                            return Container(height: 40, width: 50,
-                                child: SizedBox(width: 50,
-                                    child: FlatButton(
-                                      child: Text("Add Scope Item"),
-                                      onPressed: (){
-                                        estimate.addItem("New Item", 0);
-                                        setState((){});
-                                      },
+          body: GestureDetector(
+            onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
+            child: Form(
+                key: formKey,
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(height: 10,),
+                      Text(
+                        ' Project: ${project.name}',
+                        style: Theme.of(context).textTheme.title,
+                        textAlign: TextAlign.left,
+                      ),
+                      Divider(color: Colors.black38, thickness: 1, endIndent: 50, height: 20),
+                      Text(
+                        ' Scope of work',
+                        style: Theme.of(context).textTheme.title,
+                        textAlign: TextAlign.left,
+                      ),
+                      Flexible(
+                        flex: 5,
+                        child: ListView.builder(
+                          itemCount: estimate.items.length+1,
+                          itemBuilder: (context, index){
+                            if(index == estimate.items.length){
+                              return Container(height: 40, width: 50,
+                                  child: SizedBox(width: 50,
+                                      child: FlatButton(
+                                        child: Text("Add Scope Item"),
+                                        onPressed: (){
+                                          estimate.addItem("New Item", 0);
+                                          setState((){});
+                                        },
+                                      )
+                                  )
+                              );
+                            }
+                            return ListTile(
+                                key: ObjectKey(estimate.items[index]),
+                                title: Row(
+                                  children: <Widget>[
+                                    ButtonTheme(
+                                      padding: EdgeInsets.only(right: 5),
+                                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      minWidth: 0,
+                                      height: 0,
+                                      child: FlatButton(
+                                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                        child: Icon(Icons.delete_forever),
+                                        onPressed: (){
+                                          estimate.removeItem(estimate.items[index]);
+                                          setState(() { });
+                                        },
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: TextFormField(
+                                        keyboardType: TextInputType.text,
+                                        maxLines: 3,
+                                        minLines: 1,
+                                        initialValue: estimate.items[index].name,
+                                        validator: (String value){
+                                          return value.length < 1 ? 'Please enter a description' : null;
+                                        },
+                                        onSaved: (String value){
+                                          estimate.items[index].name = value;
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                trailing: Container(
+                                    width: 90,
+                                    child: Row(
+                                      children: [
+                                        Text("\$ "),
+                                        Expanded(
+                                          child: TextFormField(
+                                            initialValue: estimate.items[index].cost.toStringAsFixed(2),
+                                            onSaved: (String value){
+                                              if(value == "") value = '0';
+                                              estimate.items[index].cost = double.tryParse(value);
+                                            },
+                                            validator: (String value){
+                                              if(value == "") value = "0";
+                                              return double.tryParse(value) == null ? 'Invalid input' : null;
+                                            },
+                                            /* onChanged: (value){
+                                              if(value == null){
+                                                estimate.items[index].cost = 0;
+                                              }
+                                              else{
+                                                estimate.items[index].cost = double.tryParse(value);
+                                              }
+                                              setState(() {});
+                                            }, */
+                                            keyboardType: TextInputType.numberWithOptions(),
+                                          ),
+                                        ),
+                                      ],
                                     )
                                 )
                             );
-                          }
-                          return ListTile(
-                              key: ObjectKey(estimate.items[index]),
-                              title: Row(
-                                children: <Widget>[
-                                  ButtonTheme(
-                                    padding: EdgeInsets.only(right: 5),
-                                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                    minWidth: 0,
-                                    height: 0,
-                                    child: FlatButton(
-                                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                      child: Icon(Icons.delete_forever),
-                                      onPressed: (){
-                                        estimate.removeItem(estimate.items[index]);
-                                        setState(() { });
-                                      },
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: TextFormField(
-                                      maxLines: 3,
-                                      minLines: 1,
-                                      initialValue: estimate.items[index].name,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              trailing: Container(
-                                  width: 90,
-                                  child: Row(
-                                    children: [
-                                      Text("\$ "),
-                                      Expanded(
-                                        child: TextFormField(
-                                          initialValue: estimate.items[index].cost.toString(),
-                                          onChanged: (value){
-                                            estimate.items[index].cost = double.tryParse(value);
-                                            setState(() {});
-                                          },
-                                          keyboardType: TextInputType.numberWithOptions(),
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                              )
-                          );
-                        },
-                      ),
-                    ),
-                    Flexible(flex: 3,
-                      child: Align(
-                        alignment: Alignment.topRight,
-                        child: Container(
-                            padding: EdgeInsets.all(10),
-                            width: MediaQuery.of(context).size.width * .7,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Subtotal:',
-                                      style: Theme.of(context).textTheme.title,
-                                      textAlign: TextAlign.left,
-                                    ),
-                                    Text(
-                                      '\$ ' + estimate.subtotal().toString(),
-                                      style: Theme.of(context).textTheme.title,
-                                      textAlign: TextAlign.right,
-                                    ),
-                                  ],
-                                ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Tax:',
-                                      style: Theme.of(context).textTheme.title,
-                                      textAlign: TextAlign.left,
-                                    ),
-                                    Text(
-                                      (estimate.subtotal() * 0.0725).toStringAsFixed(2),
-                                      style: Theme.of(context).textTheme.title,
-                                      textAlign: TextAlign.right,
-                                    ),
-                                  ],
-                                ),
-                                Divider(height: 40, color: Colors.black),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Total:',
-                                      style: Theme.of(context).textTheme.title,
-                                      textAlign: TextAlign.left,
-                                    ),
-                                    Text(
-                                      (estimate.subtotal() * 0.0725 + estimate.subtotal()).toStringAsFixed(2),
-                                      style: Theme.of(context).textTheme.title,
-                                      textAlign: TextAlign.right,
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            )
+                          },
                         ),
                       ),
-                    ),
-                  ]
-              )
+                      Flexible(flex: 3,
+                        child: Align(
+                          alignment: Alignment.topRight,
+                          child: Container(
+                              padding: EdgeInsets.all(10),
+                              width: MediaQuery.of(context).size.width * .7,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Subtotal:',
+                                        style: Theme.of(context).textTheme.title,
+                                        textAlign: TextAlign.left,
+                                      ),
+                                      Text(
+                                        '\$ ' + estimate.subtotal().toStringAsFixed(2),
+                                        style: Theme.of(context).textTheme.title,
+                                        textAlign: TextAlign.right,
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Tax:',
+                                        style: Theme.of(context).textTheme.title,
+                                        textAlign: TextAlign.left,
+                                      ),
+                                      Text(
+                                        (estimate.subtotal() * 0.0725).toStringAsFixed(2),
+                                        style: Theme.of(context).textTheme.title,
+                                        textAlign: TextAlign.right,
+                                      ),
+                                    ],
+                                  ),
+                                  Divider(height: 40, color: Colors.black),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Total:',
+                                        style: Theme.of(context).textTheme.title,
+                                        textAlign: TextAlign.left,
+                                      ),
+                                      Text(
+                                        (estimate.subtotal() * 0.0725 + estimate.subtotal()).toStringAsFixed(2),
+                                        style: Theme.of(context).textTheme.title,
+                                        textAlign: TextAlign.right,
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              )
+                          ),
+                        ),
+                      ),
+                    ]
+                )
+            )
           )
       );
     }
@@ -431,14 +458,16 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
     else{
       int itemsWritten = 0;
       int itemsToWrite;
+      int pageNo = 1;
       while(itemsWritten < estimate.items.length - 8){
         itemsToWrite = estimate.items.length - itemsWritten;
         if(itemsToWrite > 14) itemsToWrite = 14;
-        writeFirstPage(theme, itemsToWrite, itemsWritten);
+        writeFirstPage(theme, itemsToWrite, itemsWritten, pageNo);
+        pageNo += 1;
         itemsWritten += itemsToWrite;
       }
       itemsToWrite = estimate.items.length - itemsWritten;
-      writeLastPage(theme, itemsToWrite, itemsWritten);
+      writeLastPage(theme, itemsToWrite, itemsWritten, pageNo);
       print(itemsWritten);
     }
   }
@@ -457,10 +486,6 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                 pw.Paragraph(text: 'Page No. 1 of 1')
               ],
             ),
-            pw.Align(
-              alignment: pw.Alignment.topLeft,
-              child: pw.Paragraph(text: 'Expires: xx', textAlign: pw.TextAlign.left)
-            )
           ],
         );
       },
@@ -481,7 +506,11 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.stretch,
                 children: [
-                  pw.Paragraph(text: 'We propose hereby to furnish material and labor for the above scope of work -\n in accordance with the above specifications for the sum of \$${(estimate.subtotal() * 1.0725).toStringAsFixed(2)} '),
+                  pw.Paragraph(
+                    style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                    text: 'We propose hereby to furnish material and labor for the above scope of work -\n in accordance with the above specifications for the sum of \$${(estimate.subtotal() * 1.0725).toStringAsFixed(2)} '),
                   pw.Paragraph(text: 'Any alteration or deviation from the above specifications involving extra costs will be executed only upon written order, and will become an extra charge over and above the estimate. All agreements contingent upon strikes, accidents or delays beyond control. Owner to carry fire, tornado and other necessary insurance upon above work.  Workmen\'s Compensation and public Liability Insurance on above work to be taken out by contractor. Payment in full is due within 30 days of completion of above work.'),
                   pw.Row(
                     children: [
@@ -524,20 +553,80 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
             children: [
               pw.TableRow(
                 children: [
-                  pw.Paragraph(text: 'Submitted to', padding: pw.EdgeInsets.only(left: 3)),
-                  pw.Paragraph(text: 'Today\'s date', padding: pw.EdgeInsets.only(left: 3)), 
+                  pw.Row(
+                    mainAxisSize: pw.MainAxisSize.min,
+                    children: [
+                      pw.Paragraph(text: 'Submitted to', padding: pw.EdgeInsets.only(left: 3)),
+                      pw.Text('${project.clientName}', 
+                        textAlign: pw.TextAlign.right,
+                        style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 14,
+                        )
+                      )
+                    ]
+                  ),
+                  pw.Row(
+                    mainAxisSize: pw.MainAxisSize.min,
+                    children: [
+                      pw.Paragraph(text: 'Today\'s Date', padding: pw.EdgeInsets.only(left: 3)),
+                      pw.Text('${DateFormat('MMM dd, yyyy').format(DateTime.now())}', 
+                        textAlign: pw.TextAlign.right,
+                        style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 14,
+                        )
+                      )
+                    ]
+                  ),
                 ],
               ),
               pw.TableRow(
                 children: [
-                  pw.Paragraph(text: 'Phone Number', padding: pw.EdgeInsets.only(left: 3)),
-                  pw.Paragraph(text: 'Job Name', padding: pw.EdgeInsets.only(left: 3)), 
+                  pw.Row(
+                    mainAxisSize: pw.MainAxisSize.min,
+                    children: [
+                      pw.Paragraph(text: 'Phone Number', padding: pw.EdgeInsets.only(left: 3)),
+                      pw.Text('${project.clientPhoneNumber}', 
+                        textAlign: pw.TextAlign.right,
+                        style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 14,
+                        )
+                      )
+                    ]
+                  ),
+                  pw.Row(
+                    mainAxisSize: pw.MainAxisSize.min,
+                    children: [
+                      pw.Paragraph(text: 'Project Name', padding: pw.EdgeInsets.only(left: 3)),
+                      pw.Text('${project.name}', 
+                        textAlign: pw.TextAlign.right,
+                        style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 14,
+                        )
+                      )
+                    ]
+                  ),
                 ],
               ),
               pw.TableRow(
                 children: [
-                  pw.Paragraph(text: 'Project address', padding: pw.EdgeInsets.only(left: 3)),
-                  pw.Paragraph(text: 'Project Name', padding: pw.EdgeInsets.only(left: 3)), 
+                  pw.Row(
+                    mainAxisSize: pw.MainAxisSize.min,
+                    children: [
+                      pw.Paragraph(text: 'Project Address', padding: pw.EdgeInsets.only(left: 3)),
+                      pw.Text('${project.clientAddress}', 
+                        textAlign: pw.TextAlign.right,
+                        style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 14,
+                        )
+                      )
+                    ]
+                  ),
+                  pw.Paragraph(text: '', padding: pw.EdgeInsets.only(left: 3)), 
                 ],
               ),
             ],
@@ -557,7 +646,7 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                         child:pw.Bullet(text: '${estimate.items[index].name}'),
                       ),
                       pw.Flexible(
-                        child: pw.Paragraph(text: '\$${estimate.items[index].cost}'),
+                        child: pw.Paragraph(text: '\$${estimate.items[index].cost.toStringAsFixed(2)}'),
                         
                       ),
                     ]
@@ -570,8 +659,7 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
     ));
   }
 
-  void writeFirstPage(pw.ThemeData theme, int itemsToWrite, int itemsWritten){
-    int pageNo = (itemsWritten / 14).ceil();
+  void writeFirstPage(pw.ThemeData theme, int itemsToWrite, int itemsWritten, int pageNo){
     if(pageNo == 0) pageNo = 1;
     pdf.addPage(pw.Page(
       theme: theme,
@@ -586,13 +674,9 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
                     pw.Paragraph(text: "License # ${user.licenseNumber}"),
-                    pw.Paragraph(text: 'Page No. $pageNo of ${(estimate.items.length / 14).ceil()}')
+                    pw.Paragraph(text: 'Page No. $pageNo')
                   ],
                 ),
-                pw.Align(
-                  alignment: pw.Alignment.topLeft,
-                  child: pw.Paragraph(text: 'Expires: xx', textAlign: pw.TextAlign.left)
-                )
               ],
             ),
               pw.Header(
@@ -602,29 +686,90 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                   child: pw.Text('Proposal', style: pw.TextStyle(fontSize: 36)),
                 ),
               ),
-              pw.Table(
-                  border: pw.TableBorder(),
+          pw.Table(
+
+            border: pw.TableBorder(),
+            children: [
+              pw.TableRow(
                 children: [
-                  pw.TableRow(
+                  pw.Row(
+                    mainAxisSize: pw.MainAxisSize.min,
                     children: [
                       pw.Paragraph(text: 'Submitted to', padding: pw.EdgeInsets.only(left: 3)),
-                      pw.Paragraph(text: 'Today\'s date', padding: pw.EdgeInsets.only(left: 3)), 
-                    ],
+                      pw.Text('${project.clientName}', 
+                        textAlign: pw.TextAlign.right,
+                        style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 14,
+                        )
+                      )
+                    ]
                   ),
-                  pw.TableRow(
+                  pw.Row(
+                    mainAxisSize: pw.MainAxisSize.min,
                     children: [
-                      pw.Paragraph(text: 'Phone Number', padding: pw.EdgeInsets.only(left: 3)),
-                      pw.Paragraph(text: 'Job Name', padding: pw.EdgeInsets.only(left: 3)), 
-                    ],
-                  ),
-                  pw.TableRow(
-                    children: [
-                      pw.Paragraph(text: 'Project address', padding: pw.EdgeInsets.only(left: 3)),
-                      pw.Paragraph(text: 'Project Name', padding: pw.EdgeInsets.only(left: 3)), 
-                    ],
+                      pw.Paragraph(text: 'Today\'s Date', padding: pw.EdgeInsets.only(left: 3)),
+                      pw.Text('${DateFormat('MMM dd, yyyy').format(DateTime.now())}', 
+                        textAlign: pw.TextAlign.right,
+                        style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 14,
+                        )
+                      )
+                    ]
                   ),
                 ],
               ),
+              pw.TableRow(
+                children: [
+                  pw.Row(
+                    mainAxisSize: pw.MainAxisSize.min,
+                    children: [
+                      pw.Paragraph(text: 'Phone Number', padding: pw.EdgeInsets.only(left: 3)),
+                      pw.Text('${project.clientPhoneNumber}', 
+                        textAlign: pw.TextAlign.right,
+                        style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 14,
+                        )
+                      )
+                    ]
+                  ),
+                  pw.Row(
+                    mainAxisSize: pw.MainAxisSize.min,
+                    children: [
+                      pw.Paragraph(text: 'Project Name', padding: pw.EdgeInsets.only(left: 3)),
+                      pw.Text('${project.name}', 
+                        textAlign: pw.TextAlign.right,
+                        style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 14,
+                        )
+                      )
+                    ]
+                  ),
+                ],
+              ),
+              pw.TableRow(
+                children: [
+                  pw.Row(
+                    mainAxisSize: pw.MainAxisSize.min,
+                    children: [
+                      pw.Paragraph(text: 'Project Address', padding: pw.EdgeInsets.only(left: 3)),
+                      pw.Text('${project.clientAddress}', 
+                        textAlign: pw.TextAlign.right,
+                        style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 14,
+                        )
+                      )
+                    ]
+                  ),
+                  pw.Paragraph(text: '', padding: pw.EdgeInsets.only(left: 3)), 
+                ],
+              ),
+            ],
+          ),
               pw.Align(
                 alignment: pw.Alignment.topLeft,
                 child: pw.Paragraph(text: 'We propose hereby to furnish material and labor necessary for the completion of:')
@@ -640,7 +785,7 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                             child:pw.Bullet(text: '${estimate.items[index + itemsWritten].name}'),
                           ),
                           pw.Flexible(
-                            child: pw.Paragraph(text: '\$${estimate.items[index + itemsWritten].cost}'),
+                            child: pw.Paragraph(text: '\$${estimate.items[index + itemsWritten].cost.toStringAsFixed(2)}'),
                             
                           ),
                         ]
@@ -654,7 +799,7 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
     ));
   }
   
-  void writeLastPage(pw.ThemeData theme, int itemsToWrite, int itemsWritten){
+  void writeLastPage(pw.ThemeData theme, int itemsToWrite, int itemsWritten, int pageNo){
     pdf.addPage(pw.Page(
       theme: theme,
       pageFormat: PdfPageFormat.a4,
@@ -668,13 +813,9 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
                     pw.Paragraph(text: "License # ${user.licenseNumber}"),
-                    pw.Paragraph(text: 'Page No. ${(estimate.items.length / 14).ceil()} of ${(estimate.items.length / 14).ceil()}')
+                    pw.Paragraph(text: 'Page No. $pageNo of $pageNo')
                   ],
                 ),
-/*                 pw.Align(
-                  alignment: pw.Alignment.topLeft,
-                  child: pw.Paragraph(text: 'Expires: xx', textAlign: pw.TextAlign.left)
-                ) */
               ],
             ),
               pw.Header(
@@ -684,29 +825,89 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                   child: pw.Text('Proposal', style: pw.TextStyle(fontSize: 36)),
                 ),
               ),
-              pw.Table(
-                  border: pw.TableBorder(),
-                children: [
-                  pw.TableRow(
-                    children: [
-                      pw.Paragraph(text: 'Submitted to', padding: pw.EdgeInsets.only(left: 3)),
-                      pw.Paragraph(text: 'Today\'s date', padding: pw.EdgeInsets.only(left: 3)), 
-                    ],
-                  ),
-                  pw.TableRow(
-                    children: [
-                      pw.Paragraph(text: 'Phone Number', padding: pw.EdgeInsets.only(left: 3)),
-                      pw.Paragraph(text: 'Job Name', padding: pw.EdgeInsets.only(left: 3)), 
-                    ],
-                  ),
-                  pw.TableRow(
-                    children: [
-                      pw.Paragraph(text: 'Project address', padding: pw.EdgeInsets.only(left: 3)),
-                      pw.Paragraph(text: 'Project Name', padding: pw.EdgeInsets.only(left: 3)), 
-                    ],
-                  ),
-                ],
-              ),
+            pw.Table(
+              border: pw.TableBorder(),
+              children: [
+                pw.TableRow(
+                  children: [
+                    pw.Row(
+                      mainAxisSize: pw.MainAxisSize.min,
+                      children: [
+                        pw.Paragraph(text: 'Submitted to', padding: pw.EdgeInsets.only(left: 3)),
+                        pw.Text('${project.clientName}', 
+                          textAlign: pw.TextAlign.right,
+                          style: pw.TextStyle(
+                            fontWeight: pw.FontWeight.bold,
+                            fontSize: 14,
+                          )
+                        )
+                      ]
+                    ),
+                    pw.Row(
+                      mainAxisSize: pw.MainAxisSize.min,
+                      children: [
+                        pw.Paragraph(text: 'Today\'s Date', padding: pw.EdgeInsets.only(left: 3)),
+                        pw.Text('${DateFormat('MMM dd, yyyy').format(DateTime.now())}', 
+                          textAlign: pw.TextAlign.right,
+                          style: pw.TextStyle(
+                            fontWeight: pw.FontWeight.bold,
+                            fontSize: 14,
+                          )
+                        )
+                      ]
+                    ),
+                  ],
+                ),
+                pw.TableRow(
+                  children: [
+                    pw.Row(
+                      mainAxisSize: pw.MainAxisSize.min,
+                      children: [
+                        pw.Paragraph(text: 'Phone Number', padding: pw.EdgeInsets.only(left: 3)),
+                        pw.Text('${project.clientPhoneNumber}', 
+                          textAlign: pw.TextAlign.right,
+                          style: pw.TextStyle(
+                            fontWeight: pw.FontWeight.bold,
+                            fontSize: 14,
+                          )
+                        )
+                      ]
+                    ),
+                    pw.Row(
+                      mainAxisSize: pw.MainAxisSize.min,
+                      children: [
+                        pw.Paragraph(text: 'Project Name', padding: pw.EdgeInsets.only(left: 3)),
+                        pw.Text('${project.name}', 
+                          textAlign: pw.TextAlign.right,
+                          style: pw.TextStyle(
+                            fontWeight: pw.FontWeight.bold,
+                            fontSize: 14,
+                          )
+                        )
+                      ]
+                    ),
+                  ],
+                ),
+                pw.TableRow(
+                  children: [
+                    pw.Row(
+                      mainAxisSize: pw.MainAxisSize.min,
+                      children: [
+                        pw.Paragraph(text: 'Project Address', padding: pw.EdgeInsets.only(left: 3)),
+                        pw.Text('${project.clientAddress}', 
+                          textAlign: pw.TextAlign.right,
+                          style: pw.TextStyle(
+                            fontWeight: pw.FontWeight.bold,
+                            fontSize: 14,
+                          )
+                        )
+                      ]
+                    ),
+                    pw.Paragraph(text: '', padding: pw.EdgeInsets.only(left: 3)), 
+                  ],
+                ),
+              ],
+            ),
               pw.Align(
                 alignment: pw.Alignment.topLeft,
                 child: pw.Paragraph(text: 'We propose hereby to furnish material and labor necessary for the completion of:')
@@ -722,7 +923,7 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                             child:pw.Bullet(text: '${estimate.items[index + itemsWritten].name}'),
                           ),
                           pw.Flexible(
-                            child: pw.Paragraph(text: '\$${estimate.items[index + itemsWritten].cost}'),
+                            child: pw.Paragraph(text: '\$${estimate.items[index + itemsWritten].cost.toStringAsFixed(2)}'),
                             
                           ),
                         ]
@@ -746,7 +947,11 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.stretch,
                     children: [
-                      pw.Paragraph(text: 'We propose hereby to furnish material and labor for the above scope of work -\n in accordance with the above specifications for the sum of \$${(estimate.subtotal() * 1.0725).toStringAsFixed(2)} '),
+                      pw.Paragraph(
+                        style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                        text: 'We propose hereby to furnish material and labor for the above scope of work -\n in accordance with the above specifications for the sum of \$${(estimate.subtotal() * 1.0725).toStringAsFixed(2)} '),
                       pw.Paragraph(text: 'Any alteration or deviation from the above specifications involving extra costs will be executed only upon written order, and will become an extra charge over and above the estimate. All agreements contingent upon strikes, accidents or delays beyond control. Owner to carry fire, tornado and other necessary insurance upon above work.  Workmen\'s Compensation and public Liability Insurance on above work to be taken out by contractor. Payment in full is due within 30 days of completion of above work.'),
                       pw.Row(
                         children: [
