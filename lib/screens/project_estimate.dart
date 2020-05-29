@@ -646,7 +646,7 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                         child:pw.Bullet(text: '${estimate.items[index].name}'),
                       ),
                       pw.Flexible(
-                        child: pw.Paragraph(text: '\$${estimate.items[index].cost}'),
+                        child: pw.Paragraph(text: '\$${estimate.items[index].cost.toStringAsFixed(2)}'),
                         
                       ),
                     ]
@@ -785,7 +785,7 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                             child:pw.Bullet(text: '${estimate.items[index + itemsWritten].name}'),
                           ),
                           pw.Flexible(
-                            child: pw.Paragraph(text: '\$${estimate.items[index + itemsWritten].cost}'),
+                            child: pw.Paragraph(text: '\$${estimate.items[index + itemsWritten].cost.toStringAsFixed(2)}'),
                             
                           ),
                         ]
@@ -923,7 +923,7 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                             child:pw.Bullet(text: '${estimate.items[index + itemsWritten].name}'),
                           ),
                           pw.Flexible(
-                            child: pw.Paragraph(text: '\$${estimate.items[index + itemsWritten].cost}'),
+                            child: pw.Paragraph(text: '\$${estimate.items[index + itemsWritten].cost.toStringAsFixed(2)}'),
                             
                           ),
                         ]
