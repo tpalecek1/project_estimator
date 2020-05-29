@@ -84,6 +84,7 @@ class _EditProjectState extends State<EditProject> {
                   String projectId = await Database().createProject(widget.userId, _project);
                   _project = await Database().readProject(projectId);
                   _projectInitialState = Project.fromProject(_project);
+                  _dropdownValue = _project.status;
                   _listenForRooms();
                   setState(() { _isProcessing = false; });
                 }
