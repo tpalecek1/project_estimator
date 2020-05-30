@@ -22,12 +22,6 @@ class PdfPreview extends StatelessWidget {
               appBar: AppBar(
               actions: <Widget>[
                 FlatButton(
-                  child: Icon(Icons.mail_outline),
-                  onPressed: (){
-                    //open email app with prefilled info
-                  },
-                ),
-                FlatButton(
                   child: Icon(Icons.file_download),
                   onPressed: ()async{
                     //Save to downloads folder
