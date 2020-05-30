@@ -267,6 +267,10 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                                         Expanded(
                                           child: TextFormField(
                                             initialValue: estimate.items[index].cost.toStringAsFixed(2),
+                                            onChanged: (String value){
+                                              if(value == "") value = '0';
+                                              estimate.items[index].cost = double.tryParse(value);
+                                            },
                                             onSaved: (String value){
                                               if(value == "") value = '0';
                                               estimate.items[index].cost = double.tryParse(value);
