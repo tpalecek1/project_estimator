@@ -15,7 +15,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter_email_sender/flutter_email_sender.dart';
+import 'package:flutter_mailer/flutter_mailer.dart';
+import 'package:downloads_path_provider/downloads_path_provider.dart';
 
 class ProjectEstimate extends StatefulWidget {
   ProjectEstimate({Key key, this.userId, this.project, this.rooms}) : super(key: key);
@@ -176,13 +177,18 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                       }
                       writePdf();
                       await savePdf();
-                      final Email email = Email(
+                      Directory downloadsDirectory = await DownloadsPathProvider.downloadsDirectory;
+                      String downloadFilePath = '${downloadsDirectory.path}/estimate.pdf';
+                      File file = File(downloadFilePath);
+                      file.writeAsBytesSync(pdf.save());
+                      final MailOptions mailOptions = MailOptions(
                         body: 'Attached you will find the proposal for this project.  Thank you for the opportunity to bid this project.',
                         subject: 'Project painting proposal',
-                        recipients: ['example@email.com'],
-                        attachmentPaths: [], //todo - add pdf attachment
+                        recipients: [''],
+                        attachments: [downloadFilePath],
                       );
-                      await FlutterEmailSender.send(email);
+                      await FlutterMailer.send(mailOptions);
+                      file.delete();
                     },
                   ),
                 ],
@@ -279,15 +285,6 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                                               if(value == "") value = "0";
                                               return double.tryParse(value) == null ? 'Invalid input' : null;
                                             },
-                                            /* onChanged: (value){
-                                              if(value == null){
-                                                estimate.items[index].cost = 0;
-                                              }
-                                              else{
-                                                estimate.items[index].cost = double.tryParse(value);
-                                              }
-                                              setState(() {});
-                                            }, */
                                             keyboardType: TextInputType.numberWithOptions(),
                                           ),
                                         ),

@@ -39,6 +39,7 @@ dependencies:
   flutter_plugin_pdf_viewer: ^1.0.7
   downloads_path_provider: ^0.1.0
   flutter_email_sender: ^3.0.1
+  flutter_mailer: ^0.5.0
   flutter_launcher_icons: ^0.7.5
 
 dev_dependencies:
