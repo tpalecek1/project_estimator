@@ -30,6 +30,7 @@ class ProjectEstimate extends StatefulWidget {
 }
 
 class _ProjectEstimateState extends State<ProjectEstimate> {
+  final scaffoldKey = GlobalKey<ScaffoldState>();
   final formKey = GlobalKey<FormState>();
   Project project;
   List<Room> rooms;
@@ -101,6 +102,7 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
     }
     else {
       return Scaffold(
+        key: scaffoldKey,
           resizeToAvoidBottomInset: false,
           appBar: AppBar(
               title: Text('Project Estimate')
@@ -114,6 +116,7 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                   project.estimate = estimate;
                   Database().updateProject(project);
                   setState(() {});
+                  showSnackBar('Estimate was saved.');
                 }
               }
           ),
@@ -994,6 +997,19 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
 
   Future getUser() async {
     return await Database().readUser(widget.userId);
+  }
+
+  void showSnackBar(String message) {
+    scaffoldKey.currentState.showSnackBar(
+        SnackBar(
+            content: Text(message, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(5))),
+            backgroundColor: Colors.green.withOpacity(0.9),
+            elevation: 1000,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 2),
+        )
+    );
   }
 
 }
