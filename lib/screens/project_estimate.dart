@@ -16,6 +16,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_mailer/flutter_mailer.dart';
+import 'package:downloads_path_provider/downloads_path_provider.dart';
 
 class ProjectEstimate extends StatefulWidget {
   ProjectEstimate({Key key, this.userId, this.project, this.rooms}) : super(key: key);
@@ -179,7 +180,7 @@ class _ProjectEstimateState extends State<ProjectEstimate> {
                       }
                       writePdf();
                       await savePdf();
-                      Directory downloadsDirectory = Directory('/storage/emulated/0/Download');
+                      Directory downloadsDirectory = await DownloadsPathProvider.downloadsDirectory;
                       String downloadFilePath = '${downloadsDirectory.path}/estimate.pdf';
                       File file = File(downloadFilePath);
                       file.writeAsBytesSync(pdf.save());
