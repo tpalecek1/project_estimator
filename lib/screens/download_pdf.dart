@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'package:downloads_path_provider/downloads_path_provider.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 class DownloadPdf extends StatelessWidget {
@@ -20,7 +21,7 @@ class DownloadPdf extends StatelessWidget {
         onPressed: () async {
           if(formKey.currentState.validate()){
             formKey.currentState.save();
-            Directory downloadsDirectory = Directory('/storage/emulated/0/Download');
+            Directory downloadsDirectory = await DownloadsPathProvider.downloadsDirectory;
             String downloadFilePath = '${downloadsDirectory.path}/$fileName.pdf';
             File file = File(downloadFilePath);
             file.writeAsBytesSync(pdf.save());
