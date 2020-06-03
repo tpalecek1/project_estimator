@@ -260,8 +260,8 @@ class _PhotoBigViewState extends State<PhotoBigView> {
             onPageChanged: onPageChanged,
             pageController: widget.pageController,
             builder: (context, index){
-              return PhotoViewGalleryPageOptions.customChild( //adjust pictures' sizes to the same size
-                child: Image(image: NetworkImage(widget.photoList[index]), fit: BoxFit.cover,
+              return PhotoViewGalleryPageOptions.customChild( //adjust pictures' sizes to the same size 
+                child: Image(image: NetworkImage(widget.photoList[index]), fit: BoxFit.contain,
                   loadingBuilder:(BuildContext context, Widget child,ImageChunkEvent loadingProgress) {
                     if (loadingProgress == null) return child;
                     return Center(
