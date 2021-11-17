@@ -1,3 +1,4 @@
+## Description
 Project Estimator is a cross-platform mobile application built with Flutter and usable on both iOS and android devices.  Users can create an account to store user information and create and manage projects. They can add details to projects such as measurements, notes and photographs.
 
 Project estimator will generate auto-calculated cost estimates of projects based on user and project details.  Users can edit these estimates as necessary.
