@@ -10,15 +10,14 @@ Google Firebase is used for authenticating users and Firestore is used for stori
 
 ## Gallery
 <p>
-  <img src="https://user-images.githubusercontent.com/36023933/142042539-3c127b4f-6414-4144-afc3-2823152b4d4e.png" width="300" height="600">
-  <img src="https://user-images.githubusercontent.com/36023933/142044694-7e761b63-083e-4b5d-bb48-0d6d99969d29.PNG" width="300" height="600">
-  <img src="https://user-images.githubusercontent.com/36023933/142045009-95347c1a-7a24-4112-a9ff-d7338247c6ce.PNG" width="300" height="600">
+  <img src="https://user-images.githubusercontent.com/36023933/142042539-3c127b4f-6414-4144-afc3-2823152b4d4e.png" width="250" height="500">
+  <img src="https://user-images.githubusercontent.com/36023933/142044694-7e761b63-083e-4b5d-bb48-0d6d99969d29.PNG" width="250" height="500">
+  <img src="https://user-images.githubusercontent.com/36023933/142045009-95347c1a-7a24-4112-a9ff-d7338247c6ce.PNG" width="250" height="500">
 </p>
 
 <p>
-  <img src="https://user-images.githubusercontent.com/36023933/142045432-c59bf46d-68cc-48a1-93a4-320f0155945c.png" width="300" height="600">
-  <img src="https://user-images.githubusercontent.com/36023933/142042573-db2f2fe6-0295-4a0b-836f-48c9a760b0fb.png" width="300" height="600">
-  <img src="https://user-images.githubusercontent.com/36023933/142045881-2456a230-e23c-44a2-a4ec-0e3fa456721b.PNG" width="300" height="600">
+  <img src="https://user-images.githubusercontent.com/36023933/142045432-c59bf46d-68cc-48a1-93a4-320f0155945c.png" width="250" height="500">
+  <img src="https://user-images.githubusercontent.com/36023933/142042573-db2f2fe6-0295-4a0b-836f-48c9a760b0fb.png" width="250" height="500">
 </p>
 
 ## App Flow
